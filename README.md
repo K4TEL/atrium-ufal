@@ -2,7 +2,7 @@
 
 **Scope:** Two ways of parsing PDF files to extract text were implemented, evaluation of the results and page merge are left to be done
 
-**How to run:**
+**How to install:**
 
 Install Google Cloud Vision and preset your auth credentials in the corresponding file
 
@@ -15,6 +15,8 @@ Change path to directories of pages, layouts, and texts in the same [.env](.env)
 Use pip to install dependencies:
 
 ``pip install -r requirements.txt``
+
+**How to run:**
 
 Run [script.py](script.py) with optional flags:
 
