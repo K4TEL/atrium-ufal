@@ -6,13 +6,14 @@ from common_utils import *
 
 import json
 
-dd_basic_config = ["LANGUAGE='ces'",
-                     "USE_OCR=False",
-                     # "USE_LAYOUT=False",
-                     "USE_TABLE_SEGMENTATION=False",
-                     "USE_TABLE_REFINEMENT=False",
-                     "USE_PDF_MINER=False"
-                     ]
+dd_basic_config = [
+    "LANGUAGE='ces'",
+    "USE_OCR=False",
+    # "USE_LAYOUT=False",
+    "USE_TABLE_SEGMENTATION=False",
+    "USE_TABLE_REFINEMENT=False",
+    "USE_PDF_MINER=False"
+     ]
 dd_pro_config = ["LANGUAGE='ces'"]
 
 categories = {
@@ -96,8 +97,8 @@ def predict_category(input_dict: dict) -> (int, dict):
 
 # PDF files to png pages parser
 class Layout_sorter:
-    def __init__(self, output_folder=Path(os.environ['FOLDER_RESULTS'])):
-        self.results_output_folder = output_folder
+    def __init__(self, output_folder: Path = None):
+        self.results_output_folder = Path(os.environ['FOLDER_RESULTS']) if output_folder is None else output_folder
         self.layout_input_folder = Path(os.environ['FOLDER_SUMMARY'])
         self.stat_input_folder = Path(os.environ['FOLDER_STATS'])
 
@@ -107,20 +108,16 @@ class Layout_sorter:
         if not self.results_output_folder.is_dir():
             self.results_output_folder.mkdir()
 
-
     # merge pdf level stats into a single table
-    def pdf_level_summary(self, pdf_stat_files: list[str] = None) -> pandas.DataFrame:
+    def pdf_level_summary(self, pdf_stat_files: list[Path] = None) -> pandas.DataFrame:
         total_stats = []
         if pdf_stat_files is None:
             pdf_stat_files = self.pdf_stat_list
         for pdf_stat_name in pdf_stat_files:
-            # filename = os.path.join(self.stat_input_folder, pdf_stat_name)
-
             filename = self.stat_input_folder / pdf_stat_name
 
             pdf_cat_count = {cat_id: 0 for cat_id in categories.keys()}
             page_count = 0
-
 
             if os.path.getsize(filename) > 1:
                 pdf_stats = pd.read_csv(filename, sep="\t")
@@ -158,11 +155,8 @@ class Layout_sorter:
                 json_data = json.load(f)
 
             json_data = json.loads(json_data)
-            # json_data['FIG']['FILE'] = page_stat_name.split("_")[-3].split("/")[-1]
-            # json_data['FIG']['PAGE'] = page_stat_name.split("_")[-1].split(".")[0]
 
             stat_filename = page_stat_name.stem.split("_")
-
             json_data['FIG']['FILE'] = stat_filename[0]
             json_data['FIG']['PAGE'] = stat_filename[-1]
 

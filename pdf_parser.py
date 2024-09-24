@@ -10,13 +10,14 @@ import deepdoctection as dd
 # from matplotlib import pyplot as plt
 import json
 
-dd_basic_config = ["LANGUAGE='ces'",
-                     "USE_OCR=False",
-                     # "USE_LAYOUT=False",
-                     "USE_TABLE_SEGMENTATION=False",
-                     "USE_TABLE_REFINEMENT=False",
-                     "USE_PDF_MINER=False"
-                     ]
+dd_basic_config = [
+    "LANGUAGE='ces'",
+    "USE_OCR=False",
+    # "USE_LAYOUT=False",
+    "USE_TABLE_SEGMENTATION=False",
+    "USE_TABLE_REFINEMENT=False",
+    "USE_PDF_MINER=False"
+     ]
 dd_pro_config = ["LANGUAGE='ces'"]
 
 
@@ -25,8 +26,8 @@ load_dotenv()
 
 # PDF files to png pages parser
 class PDF_parser:
-    def __init__(self, output_folder: Path = Path(os.environ['FOLDER_LAYOUTS_DD'])):
-        self.layout_output_folder = output_folder
+    def __init__(self, output_folder: Path = None):
+        self.layout_output_folder = Path(os.environ['FOLDER_LAYOUTS_DD']) if output_folder is None else output_folder
         self.stat_output_folder = Path(os.environ['FOLDER_STATS'])
         self.pdf_output_folder = Path(os.environ['FOLDER_SUMMARY'])
 
@@ -36,21 +37,12 @@ class PDF_parser:
         self.detector_pro = None
 
         self.cur_file_name = ""
-        self.cur_stats_summary_file = f"{self.cur_file_name}.tsv"
+        self.cur_stats_summary_file = Path(f"{self.cur_file_name}.tsv")
         self.cur_pdf_page_count = 0
 
         self.cur_pages = []
         self.cur_layouts = []
         self.cur_stats = []
-
-        # if not os.path.exists(self.layout_output_folder):
-        #     os.makedirs(self.layout_output_folder)
-        #
-        # if not os.path.exists(self.stat_output_folder):
-        #     os.makedirs(self.stat_output_folder)
-        #
-        # if not os.path.exists(self.pdf_output_folder):
-        #     os.makedirs(self.pdf_output_folder)
 
         if not self.layout_output_folder.is_dir():
             self.layout_output_folder.mkdir()
@@ -61,25 +53,22 @@ class PDF_parser:
         if not self.pdf_output_folder.is_dir():
             self.pdf_output_folder.mkdir()
 
-
     # load from file sys current PDF's supplementary files
     def update_cur_vars(self, pdf_file: Path, next_file: bool = False) -> None:
         if next_file:
-            # self.cur_file_name = pdf_file.split("/")[-1].split(".")[0]
             self.cur_file_name = pdf_file.stem
             self.cur_stats_summary_file = self.pdf_output_folder / f"{self.cur_file_name}.tsv"
             self.cur_pdf_page_count = fitz.open(pdf_file).page_count
 
-        self.cur_layouts = list(self.layout_output_folder.glob(f"{self.cur_file_name}_page"))
-        self.cur_stats = list(self.stat_output_folder.glob(f"{self.cur_file_name}_page"))
+        self.cur_layouts = list(self.layout_output_folder.glob(f"{self.cur_file_name}_page*"))
+        self.cur_stats = list(self.stat_output_folder.glob(f"{self.cur_file_name}_page*"))
         # self.cur_stats = [page_file for page_file in os.listdir(self.stat_output_folder) if
         #                   page_file.startswith(f"{self.cur_file_name}_page")]
 
+        # print(self.cur_file_name, len(self.cur_layouts), len(self.cur_stats))
+
     # load PDF, go through page layouts and save them as JSON
     def pdf_to_json(self, pdf_file: Path, save=True) -> None:
-        # pdf_layout_prefix = self.layout_output_folder / self.cur_file_name
-        # pdf_stat_prefix = self.stat_output_folder / self.cur_file_name
-
         self.update_cur_vars(pdf_file, self.cur_file_name == "")
 
         if len(self.cur_stats) == self.cur_pdf_page_count:
@@ -110,12 +99,10 @@ class PDF_parser:
             page_numbers = [a for a in range(self.cur_pdf_page_count)]
             for pn in page_numbers:
                 pn += 1
-                # if not os.path.isfile(f"{pdf_layout_prefix}_page_{pn}.json"):
-                #     time.sleep(2.5)
                 cur_page_filename = self.layout_output_folder / f"{self.cur_file_name}_page_{pn}.json"
                 if not cur_page_filename.is_file():
                     time.sleep(2.5)
-                page = dd.Page.from_file(file_path=cur_page_filename)
+                page = dd.Page.from_file(file_path=str(cur_page_filename))
                 page_area = page.height * page.width
                 print(f"IMG\t{page_area}")
                 print(f"IMG\t{pn + 1}/{self.cur_pdf_page_count} Page Layout Analysis...")
@@ -228,15 +215,13 @@ class PDF_parser:
 def merge_stats(stats: list, stat_output_folder: Path) -> pandas.DataFrame:
     pdf_pages = []
     for page_stat_name in stats:
+        # print(page_stat_name)
         with open(stat_output_folder / page_stat_name, 'r') as f:
             json_data = json.load(f)
 
         json_data = json.loads(json_data)
-        # json_data['FIG']['FILE'] = page_stat_name.split("_")[0]
-        # json_data['FIG']['PAGE'] = page_stat_name.split("_")[-1].split(".")[0]
 
         stat_filename = page_stat_name.stem.split("_")
-
         json_data['FIG']['FILE'] = stat_filename[0]
         json_data['FIG']['PAGE'] = stat_filename[-1]
 
