@@ -1,41 +1,47 @@
-**Goal:** This project solves a task of Optical Character Recognition
+**Goal:** This project solves a task of layouts analysis
 
-**Scope:** Two ways of parsing PDF files to extract text were implemented, evaluation of the results and page merge are left to be done
+**Scope:** Parsing PDF files to extract layouts was implemented with DeepDoctection, further sorting is manual
 
 **How to run:**
 
-Install Google Cloud Vision and preset your auth credentials in the corresponding file
+Open [.env](.env) environment file where all output folder paths are defined.
+NOTE that only the last folder path is going to contain the resulting files, while others - temporary files.
 
-Optional: Install Tesseract
-
-Change path to GCV credentials and/or Tesseract binaries in the [.env](.env) environment file
-
-Change path to directories of pages, layouts, and texts in the same [.env](.env) file
+Change paths to folders by replacing the beginnings of directory paths with your own **FULL** directory paths (to existing or not folders)
 
 Use pip to install dependencies:
 
 ``pip install -r requirements.txt``
 
-Run [script.py](script.py) with optional flags:
+Run the program from its starting point [script.py](script.py) with optional flags:
 
-``python3 script.py --pdf --img`` to run single PDF file parsing and following text extraction from its page images
+``python3 script.py --pdf '/full/path/to/file'`` to run single PDF file parsing and following layout extraction from its pages
 
-``python3 script.py --pdf --img  --dir`` to parse all PDF files in the directory and extract text from all page images
+``python3 script.py --pdf  --dir '/full/path/to/directory'`` to parse all PDF files in the directory and extract layouts from all pages (RECOMMENDED)
 
-``python3 script.py --img`` to extract text from a single page PNG image file, supports only GCV
+The results of PDF to table parsing will be saved to related folders with page numbers added to PDF filename. 
 
-``python3 script.py --img  --dir``to extract text from all page PNG image files in the directory,  supports only GCV
+**Explanations:**
 
-Add ```--nogcv``` flag to run OCR using Tesseract and LayoutParser instead of GCV
+Single PDF processing steps:
 
-The results of PDF to PNG parsing will be saved to pages folder with page numbers added to PDF filename. Code can be found in [pdf_parser.py](pdf_parser.py) script
+1. DD (DeepDoctection) layout of all pages in the PDF (_layouts_dd_ folder)
+ 
+2. JSON summaries of page layouts (_layout_stat_ folder)
+ 
+3. table summary of the whole PDF in .tsv format (_layout_pdf_ folder)
 
-The results of LayputParser detection will be saved in [layouts](layouts) folder in form of tab separated tables. Code can be found in [png_layout.py](png_layout.py) script
+and finally:
 
-The results of Tesseract OCR detection will be saved in [ocr_text](ocr_text) folder in form of tab separated tables. Code can be found in [ocr_parser.py](ocr_parser.py) script
+4. directory summary in .csv format (_results_ folder)
 
-The results of Google Cloud Vision OCR detection will be saved in [ocr_text_gcv](ocr_text_gcv) folder in form of tab separated tables. Code can be found in [ocr_parser.py](ocr_parser.py) script
+NOTE! All .json and .tsv Files in the output directories can be deleted after the table summary .csv file of the input directory have been created
+
+You may need to **rerun** the program several times, all saved files count as a progress of the whole directory processing. 
+
+Code of the algorithms can be found in [pdf_parser.py](pdf_parser.py) and [layout_sorter.py](layout_sorter.py) script
+
+Code of the starting point [script.py](script.py) can be edited. 
+If .env variables are not loaded - change filenames in the beginning of [script.py](script.py)
 
 The repository files include 2 test documents [CTX200502635.pdf](CTX200502635.pdf) and [CTX200903109.pdf](CTX200903109.pdf) referenced in [script.py](script.py)
-
-The image preprocessing isn't finished, but examples can be found in [preprocess.py](preprocess.py)
