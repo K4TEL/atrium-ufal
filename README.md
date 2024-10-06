@@ -15,9 +15,9 @@ Use pip to install dependencies:
 
 Run the program from its starting point [script.py](script.py) with optional flags:
 
-``python3 script.py --pdf '/full/path/to/file'`` to run single PDF file parsing and following layout extraction from its pages
+``python3 script.py --pdf -f '/full/path/to/file'`` to run single PDF file parsing and following layout extraction from its pages
 
-``python3 script.py --pdf  --dir '/full/path/to/directory'`` to parse all PDF files in the directory and extract layouts from all pages (RECOMMENDED)
+``python3 script.py --pdf --dir -d '/full/path/to/directory'`` to parse all PDF files in the directory and extract layouts from all pages (RECOMMENDED)
 
 The results of PDF to table parsing will be saved to related folders with page numbers added to PDF filename. 
 
