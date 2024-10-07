@@ -2,6 +2,5 @@ deepdoctection
 fitz
 numpy
 opencv_python
-opencv_python_headless
 pandas
 python-dotenv
