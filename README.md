@@ -21,6 +21,11 @@ Run the program from its starting point [script.py](script.py) with optional fla
 
 The results of PDF to table parsing will be saved to related folders with page numbers added to PDF filename. 
 
+``--pro`` flag to use Tesseract-based methods of OCR during page image processing - 
+using Table extraction and PDF miner modules of DeepDoctection
+
+``-c`` or ``--cred`` flag to setup threshold value of prediction scores
+
 **Explanations:**
 
 Single PDF processing steps:
