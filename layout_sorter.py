@@ -186,7 +186,7 @@ class Layout_sorter:
         if pdf_sum_files is None:
             pdf_sum_files = self.pdf_sum_list
         for pdf_sum_name in pdf_sum_files:
-            filename = self.stat_input_folder / pdf_sum_name
+            filename = self.layout_input_folder / pdf_sum_name
 
             pdf_cat_count = {cat_id: 0 for cat_id in categories_2.keys()}
             page_count = 0
@@ -287,14 +287,14 @@ class Layout_sorter:
             results_table = self.page_level_summary(cred_files=cred_files)
             results_table = results_table.sort_values(by=['FILE', 'PAGE'])
         else:
-            self.pdf_stat_list = directory_scraper(self.layout_input_folder, "tsv")
+            self.pdf_sum_list = directory_scraper(self.layout_input_folder, "tsv")
 
             if cred_files:
-                self.pdf_stat_list = [filepath for filepath in self.pdf_stat_list if
+                self.pdf_sum_list = [filepath for filepath in self.pdf_sum_list if
                                       str(Path(filepath).stem).endswith(f"cred_{self.credibility}")]
 
             if self.pro_dd:
-                self.pdf_stat_list = [filepath for filepath in self.pdf_stat_list if
+                self.pdf_sum_list = [filepath for filepath in self.pdf_sum_list if
                                        str(Path(filepath).stem).startswith("pro")]
 
             results_table = self.pdf_level_summary(cred_files=cred_files)

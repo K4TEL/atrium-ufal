@@ -21,6 +21,11 @@ Run the program from its starting point [script.py](script.py) with optional fla
 
 The results of PDF to table parsing will be saved to related folders with page numbers added to PDF filename. 
 
+``--pro`` flag to use Tesseract-based methods of OCR during page image processing - 
+using Table extraction and PDF miner modules of DeepDoctection
+
+``-c 0.1`` or ``--cred 0.1`` flag to setup threshold value of prediction scores
+
 **Explanations:**
 
 Single PDF processing steps:
@@ -44,4 +49,4 @@ Code of the algorithms can be found in [pdf_parser.py](pdf_parser.py) and [layou
 Code of the starting point [script.py](script.py) can be edited. 
 If .env variables are not loaded - change filenames in the beginning of [script.py](script.py)
 
-The repository files include 2 test documents [CTX200502635.pdf](CTX200502635.pdf) and [CTX200903109.pdf](CTX200903109.pdf) referenced in [script.py](script.py)
+The repository files include a test document [CTX199706756.pdf](CTX199706756.pdf) referenced in [script.py](script.py)

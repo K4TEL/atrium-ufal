@@ -16,8 +16,8 @@ if __name__ == "__main__":
     pytesseract.pytesseract.tesseract_cmd = os.environ['TESSERACT']  # should be preinstalled
 
     parser = argparse.ArgumentParser(description='OCR PDF/PNG parser')
-    parser.add_argument('-f', "--file", type=str, default=file_big, help="Single PDF file path")
-    parser.add_argument('-d', "--directory", type=str, default=folder_brno, help="Path to folder with PDF files")
+    parser.add_argument('-f', "--file", type=str, default=file_small, help="Single PDF file path")
+    parser.add_argument('-d', "--directory", type=str, default=folder_arup, help="Path to folder with PDF files")
     parser.add_argument('-c', "--cred", type=float, default=credibility, help="Minimal credibility of DeepDoctection predictions")
 
     # parser.add_argument('-pf', "--pagefile", type=str, help="Single image file path")
@@ -47,11 +47,11 @@ if __name__ == "__main__":
         else:
             pdf_parser.pdf_to_table(Path(args.file))   # called on pdf to get its dd layout, stats, and summary table
 
-        tabler = Layout_sorter(output_folder=results_table_folder, credibility=args.cred,
-                               pro_ocr=args.pro)  # turns stats to summary table
-        if args.dir:
-            tabler.folder_process_level(cred_files=True)   # page level
-            tabler.folder_process_level(page=False, cred_files=True)    # pdf level
-        else:
-            tabler.file_process_level(Path(args.file))
+    tabler = Layout_sorter(output_folder=results_table_folder, credibility=args.cred,
+                           pro_ocr=args.pro)  # turns stats to summary table
+    if args.dir:
+        tabler.folder_process_level(cred_files=True)   # page level
+        tabler.folder_process_level(page=False, cred_files=True)    # pdf level
+    else:
+        tabler.file_process_level(Path(args.file))
 

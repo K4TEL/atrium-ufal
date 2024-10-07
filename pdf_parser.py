@@ -156,8 +156,10 @@ class PDF_parser:
             page_numbers = [a for a in range(self.cur_pdf_page_count)]
             for pn in page_numbers:
                 pn += 1
-                ending = f"-0{pn}.png" if pn < 9 < self.cur_pdf_page_count else f"-{pn}.png"
+                ending = f"-0{pn}.png" if pn <= 9 < self.cur_pdf_page_count else f"-{pn}.png"
+                # print(ending, self.cur_pdf_page_count, self.cur_page_src)
                 srcs = list(self.cur_file_src_folder.glob(f"*{ending}"))
+                # print(srcs)
                 src_page_image_file = Path(srcs[0])
                 cur_page_layout_file = self.layout_output_folder / f"{'pro_' if self.pro_dd else ''}{self.cur_file_name}_page_{pn}.json"
                 if not cur_page_layout_file.is_file():
