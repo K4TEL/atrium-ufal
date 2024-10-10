@@ -15,13 +15,15 @@ existing or not directories)
 
 Use pip to install dependencies:
 
-``pip install -r requirements.txt``
+    pip install -r requirements.txt
 
 Run the program from its starting point [script.py](script.py) with optional flags:
 
-- ``python3 script.py --pdf -f '/full/path/to/file'`` to run single PDF file parsing and following layout extraction from its pages
+    python3 script.py --pdf -f '/full/path/to/file'
+to run single PDF file parsing and following layout extraction from its pages
 
-- ``python3 script.py --pdf --dir -d '/full/path/to/directory'`` to parse all PDF files in the directory and extract layouts from all pages (RECOMMENDED)
+    python3 script.py --pdf --dir -d '/full/path/to/directory' 
+to parse all PDF files in the directory and extract layouts from all pages (RECOMMENDED)
 
 The results of PDF to CSV table parsing will be saved to related folders with page numbers and above flags added to the filenames 
 
@@ -33,9 +35,11 @@ using Table extraction and PDF miner modules of DeepDoctection, NOTE! make sure 
 Tip: you can run the script in the second terminal window without ``--pdf`` flag to skip DD processing and run only 
 category prediction for already collected page layout stat files
 
-- ``python3 script.py --pdf -f '/full/path/to/file' --pro -c 0.0'`` best file processing setup
+    python3 script.py --pdf -f '/full/path/to/file' --pro -c 0.0' 
+best file processing setup
 
-- ``python3 script.py --pdf --dir -d '/full/path/to/directory' --pro -c 0.0'`` best directory processing setup
+    python3 script.py --pdf --dir -d '/full/path/to/directory' --pro -c 0.0
+best directory processing setup
 
 
 **Step-by-step workflow explanations:**
@@ -74,19 +78,22 @@ You may need to **rerun** the program several times, all saved files count as a 
 
 Code of the algorithms can be found in the following files:
 
-- [opencv_line_detector.py](opencv_line_detector.py) - hough line detection and its results post processing
-- [pdf_parser.py](pdf_parser.py) - parsing PDF files to PNG sources, PNG layout plots, JSON page stats 
-- [layout_sorter.py](layout_sorter.py) - compiling JSON stat files to CSV results tables
-- [common_utils.py](common_utils.py) - common functions including category prediction algo
+- [opencv_line_detector.py](opencv_line_detector.py) - hough line detection and its results post processing, PNG plots saving
+- [pdf_parser.py](pdf_parser.py) - parsing PDF files to PNG sources, PNG layout plots, JSON page stats, TXT text summaries 
+- [layout_sorter.py](layout_sorter.py) - compiling JSON stat files to CSV results tables with categories
+- [common_utils.py](common_utils.py) - common functions including category prediction algorith
 
-Code of the starting point [script.py](script.py) can be edited. 
+Code of the main function in the starting point [script.py](script.py) file can be edited. 
 If [.env](.env) variables are not loaded - change filenames in the main function of [script.py](script.py)
 
-The repository files include test documents [CTX199706756.pdf](CTX199706756.pdf) [CTX194604301.pdf](CTX194604301.pdf) 
+The repository files include test documents [CTX199706756.pdf](CTX199706756.pdf), [CTX194604301.pdf](CTX194604301.pdf) 
 referenced in [script.py](script.py)
 
-Note that you can set up default values of _credibility_, _file_ and _directory_ values in the main function of
+**TIP** You can set up default values of _credibility_, _file_ and _directory_ values in the main function of
 [script.py](script.py) and then run the script via:
 
-- ``python3 script.py --dir --pdf --pro`` - for directory (and subdirectories) level processing
-- ``python3 script.py --pdf --pro``- for PDF file level processing
+    python3 script.py --dir --pdf --pro
+for directory (and subdirectories) level processing
+
+    python3 script.py --pdf --pro
+for PDF file level processing
