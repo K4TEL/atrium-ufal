@@ -41,7 +41,7 @@ class PDF_parser:
         self.pdf_stat_output_folder = Path(os.environ['FOLDER_SUMMARY'])
 
         self.page_output_folder = Path(os.environ['FOLDER_PAGES'])
-        self.page_source_folder = Path(f"{os.environ['FOLDER_PAGES']}_src")
+        self.page_source_folder = self.page_output_folder / "src"
 
         self.pdf_text_output_folder = Path(os.environ['FOLDER_TEXTS'])
 
@@ -199,7 +199,7 @@ class PDF_parser:
                                                             self.cred_min_tresh,
                                                             self.pro_dd)
 
-                pdf_text += f"\n\n{page_text}"
+                pdf_text += f"\n{pn}\n{page_text}"
 
                 page_num = generate_page_file_sufix(pn, self.cur_pdf_page_count)
                 with open(self.page_stat_output_folder / f"{out_prefix}{self.cur_filename}_page_{page_num}_cred_{self.cred_min_tresh}.json", 'w') as f:
