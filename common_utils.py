@@ -69,7 +69,7 @@ def merge_stats(stats: list, stat_output_folder: Path, credibility: float, pro_d
     return pd.DataFrame.from_records(pdf_pages).sort_values(by=['FILE', 'PAGE'])
 
 
-# manual algo to determine 1 of 10 category of the page by its JSON stats
+# manual algo to determine 1 of 10 category of the page by its JSON stats               ( OLD - DONT USE)
 def predict_page_category(input_dict: dict) -> (int, dict):
     category_id = 10
 

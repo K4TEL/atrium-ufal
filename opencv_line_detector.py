@@ -2,6 +2,7 @@ import math
 
 import cv2 as cv
 import numpy as np
+from PIL import Image
 
 import matplotlib.pyplot as plt
 from common_utils import *
@@ -135,25 +136,33 @@ def adjust_gamma(image, gamma=1.0):
 
 def process_image(image_path, N):
     # Read the image
-    image = cv.imread(image_path)
-
-    # 1. Turn image into grayscale
-    gray_image = cv.cvtColor(image, cv.COLOR_BGR2GRAY)
-    # cv.imshow("Grayscale Image", gray_image)
-    # cv.waitKey(0)
-
+    image = cv.imread(cv.samples.findFile(str(image_path)), cv.IMREAD_GRAYSCALE)
     # 2. Get a histogram of colors
-    color_hist = cv.calcHist([gray_image], [0, 1, 2], None, [256, 256, 256], [0, 256, 0, 256, 0, 256])
-
-    # Plot histogram
-    plt.plot(color_hist.flatten())
-    plt.title("Color Histogram")
-    plt.xlabel("Bins")
-    plt.ylabel("Number of Pixels")
+    # color_hist = cv.calcHist([image], [0, 1, 2], None, [256, 256, 256], [0, 256, 0, 256, 0, 256])
+    hist = cv.calcHist([image], [0], None, [256], [0, 256])
+    #       cv.calcHist(images, channels, mask, histSize, ranges[, hist[, accumulate]]) ->hist
+    # cv.imshow('src', image)
+    # cv.waitKey(1)
+    #
+    plt.plot(hist)
     plt.show()
+    #
+    # cv.destroyAllWindows()
+
+    print(hist)
+    print(len(hist))
+
+    bright = hist[128:, :]
+    dark = hist[:128, :]
+
+    print(len(bright), len(dark))
+
+    print(np.argmin(dark), np.argmax(dark))
+    print(np.argmin(bright)+128, np.argmax(bright)+128)
+
 
     # 3. From 4 corners of the image, get the mean color of square regions with side N
-    h, w, _ = image.shape
+    h, w = image.shape
 
     # Top-left corner
     tl_corner = image[:N, :N]
@@ -170,6 +179,33 @@ def process_image(image_path, N):
     # Bottom-right corner
     br_corner = image[h - N:, w - N:]
     br_mean = np.mean(br_corner, axis=(0, 1))
+
+    print(tl_corner)
+
+    img_np = np.array(image)
+    print(img_np)
+    img_np = img_np.flatten()
+    print(img_np)
+    img_np = np.where(128 < img_np < 128 + int(np.argmin(bright)), 255, img_np)
+
+    img_np = img_np.reshape(image.shape)
+
+    img.putdata(img_np.flatten())
+
+    img.save('img_thresholded.png')
+
+    raise NotImplementedError
+
+    r, image = cv.threshold(image, int(np.argmin(dark)), 255, cv.THRESH_TOZERO)
+    r, image = cv.threshold(image, int(np.argmin(bright)) + 128, 255, cv.THRESH_TRUNC)
+    # cv.imshow("Thresholded Image", image)
+    # cv.waitKey(1)
+
+    # Clean up windows
+    # cv.destroyAllWindows()
+
+    # raise NotImplementedError
+    return image
 
     corner_means = {
         'Top Left': tl_mean,
@@ -201,7 +237,7 @@ def process_image(image_path, N):
 
     # Display the gamma corrected image
     cv.imshow("Gamma Corrected Image", gamma_corrected_image)
-    cv.waitKey(0)
+    cv.waitKey(1)
 
     # 6. Apply cv.THRESH_TOZERO to set gray pixels to black
     # First convert to grayscale
@@ -209,20 +245,73 @@ def process_image(image_path, N):
 
     # Apply threshold
     _, thresholded_image = cv.threshold(gamma_corrected_gray, 127, 255, cv.THRESH_TOZERO)
+    _, thresh3 = cv2.threshold(img, 127, 255, cv2.THRESH_TRUNC)
 
     # Display the thresholded image
-    cv.imshow("Thresholded Image", thresholded_image)
-    cv.waitKey(0)
+    # cv.imshow("Thresholded Image", thresholded_image)
+    # cv.waitKey(1)
 
     # Clean up windows
     cv.destroyAllWindows()
 
 
 # Example usage:
-# process_image('image.jpg', 50)  # Adjust 'image.jpg' with your image path and N with your desired side length
+# fi = Path("/lnet/work/people/lutsai/pythonProject/pages/src/CTX192601320/c33d06d8-7459-49a8-9bbb-e5b74d855264-1.png")
+#
+# with Image.open(fi) as img:
+#     img.load()
+#
+# img.show()
+#
+# image = cv.imread(cv.samples.findFile(str(fi)), cv.IMREAD_GRAYSCALE)
+# hist = cv.calcHist([image], [0], None, [256], [0, 256])
+# #       cv.calcHist(images, channels, mask, histSize, ranges[, hist[, accumulate]]) ->hist
+# # cv.imshow('src', image)
+# # cv.waitKey(1)
+# #
+# # plt.plot(hist)
+# # plt.show()
+# #
+# # cv.destroyAllWindows()
+#
+# print(hist)
+# print(len(hist))
+#
+# bright = hist[128:, :]
+# dark = hist[:128, :]
+#
+# print(len(bright), len(dark))
+#
+# print(np.argmin(dark), np.argmax(dark))
+# print(np.argmin(bright)+128, np.argmax(bright)+128)
+# img = img.point(
+#     lambda x: 0 if x < np.argmin(dark) else x
+#  )
+#
+# img = img.point(
+#     lambda x: 255 if x > np.argmax(bright)+120 else x
+#  )
+# img.show()
+#
+# img.save('img_thresholded.png')
+#
+# fi = "/lnet/work/people/lutsai/pythonProject/OCR/ltp-ocr/OCR_demo/img_thresholded.png"
+# image = cv.imread(cv.samples.findFile(str(fi)), cv.IMREAD_GRAYSCALE)
+#
+#
+# hist = cv.calcHist([image], [0], None, [256], [0, 256])
+#
+# plt.plot(hist)
+# plt.show()
 
 
+# img = process_image(fi, 20)  # Adjust 'image.jpg' with your image path and N with your desired side length
+#
+# cv.imshow("Thresholded Image", img)
+# cv.waitKey(0)
+#
+# # Clean up windows
+# cv.destroyAllWindows()
 
-# fi = Path("/lnet/work/people/lutsai/pythonProject/pages_src/CTX199706756/6591569c-2e8c-4db6-a7a9-84ab997c7f34-12.png")
 # hough_lines(fi)
 # page_visual_analysis(fi)

@@ -23,7 +23,7 @@ Run the program from its starting point [script.py](script.py) with optional fla
 to run single PDF file parsing and following layout extraction from its pages
 
     python3 script.py --pdf --dir -d '/full/path/to/directory' 
-to parse all PDF files in the directory and extract layouts from all pages (RECOMMENDED)
+to parse all PDF files in the directory (+ its subdirectories) and extract layouts from all pages (RECOMMENDED)
 
 The results of PDF to CSV table parsing will be saved to related folders with page numbers and above flags added to the filenames 
 
@@ -89,11 +89,13 @@ If [.env](.env) variables are not loaded - change filenames in the main function
 The repository files include test documents [CTX199706756.pdf](CTX199706756.pdf), [CTX194604301.pdf](CTX194604301.pdf) 
 referenced in [script.py](script.py)
 
-**TIP** You can set up default values of _credibility_, _file_ and _directory_ values in the main function of
+**TIP**     You can set up default values of _credibility_, _file_ and _directory_ values in the main function of
 [script.py](script.py) and then run the script via:
 
     python3 script.py --dir --pdf --pro
-for directory (and subdirectories) level processing
+
+which is for directory (and subdirectories) level processing
 
     python3 script.py --pdf --pro
-for PDF file level processing
+
+which is for PDF file level processing

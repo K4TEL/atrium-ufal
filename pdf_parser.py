@@ -425,6 +425,3 @@ def page_layout_analysis(layout_filename: Path, image_filename: Path, output_fil
 
     return page_text, j
 
-
-# fi = Path("/lnet/work/people/lutsai/pythonProject/pages_src/CTX199706756/6591569c-2e8c-4db6-a7a9-84ab997c7f34-12.png")
-# page_visual_analysis(fi)
