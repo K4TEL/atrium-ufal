@@ -35,10 +35,10 @@ using Table extraction and PDF miner modules of DeepDoctection, NOTE! make sure 
 Tip: you can run the script in the second terminal window without ``--pdf`` flag to skip DD processing and run only 
 category prediction for already collected page layout stat files
 
-    python3 script.py --pdf -f '/full/path/to/file' --pro -c 0.0' 
+    python3 script.py -f '/full/path/to/file' --pro -c 0.0' 
 best file processing setup
 
-    python3 script.py --pdf --dir -d '/full/path/to/directory' --pro -c 0.0
+    python3 script.py --dir -d '/full/path/to/directory' --pro -c 0.0
 best directory processing setup
 
 
