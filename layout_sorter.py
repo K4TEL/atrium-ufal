@@ -25,7 +25,6 @@ class Layout_sorter:
         self.results_output_folder = Path(os.environ['FOLDER_RESULTS']) if output_folder is None else output_folder
         self.pdf_stat_input_folder = Path(os.environ['FOLDER_SUMMARY'])
         self.page_stat_input_folder = Path(os.environ['FOLDER_STATS'])
-        self.page_input_folder = Path(os.environ['FOLDER_PAGES'])  # TODO
 
         self.cred_min_tresh = abs(credibility) if credibility is not None else credibility
         self.pro_dd = pro_ocr
@@ -76,18 +75,6 @@ class Layout_sorter:
     def page_level_summary(self, page_stat_files: list[Path] = None, rename: bool = False ) -> pandas.DataFrame:
         if page_stat_files is None:
             page_stat_files = self.page_stat_list
-
-        page_image_files = None
-        # if rename:
-        #     page_image_files = directory_scraper(self.page_input_folder, "png")
-        #
-        #     for page_stat_name in page_stat_files:
-        #         if page_image_files:
-        #             current_file = [filename for filename in page_image_files if f"{page_stat_name.stem}.png" == filename]
-        #             for cur_image_file in current_file:
-        #                 cur_image_file = Path(cur_image_file)
-        #                 cur_image_file.rename(cur_image_file.with_name(f"{category_id_map[category_id]}-{page_stat_name.stem}"))
-        #                 print(f"[ IMG ] \t{page_stat_name} renamed {self.page_stat_list}")
 
         table_summary = merge_stats(page_stat_files, self.page_stat_input_folder, self.cred_min_tresh, self.pro_dd)
         table_summary = table_summary.round(2)
