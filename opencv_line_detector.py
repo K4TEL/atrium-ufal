@@ -1,11 +1,12 @@
 import math
-
+import mahotas
 import cv2 as cv
 import numpy as np
 from PIL import Image
 
 import matplotlib.pyplot as plt
 from common_utils import *
+from pylab import imshow, gray, show
 
 
 # hough line detection of long and short lines, plotting of the results
@@ -255,8 +256,10 @@ def process_image(image_path, N):
     cv.destroyAllWindows()
 
 
+fname = "MTX201891173-3"
+
 # Example usage:
-fi = Path("/lnet/work/people/lutsai/pythonProject/pages/src/CTX192601320/c33d06d8-7459-49a8-9bbb-e5b74d855264-1.png")
+fi = Path(f"/home/lutsai/personal_work_ms/pythonProject/pages/train/TEXT/{fname}.png")
 
 with Image.open(fi) as img:
     img.load()
@@ -274,35 +277,67 @@ hist = cv.calcHist([image], [0], None, [256], [0, 256])
 #
 # cv.destroyAllWindows()
 
-print(hist)
-print(len(hist))
+# print(hist)
+# print(len(hist))
 
-bright = hist[128:, :]
-dark = hist[:128, :]
+# bright = hist[128:, :]
+# dark = hist[:128, :]
+#
+# print(len(bright), len(dark))
+#
+# print(np.argmin(dark), np.argmax(dark))
+# print(np.argmin(bright)+128, np.argmax(bright)+128)
+# img = img.point(
+#     lambda x: 0 if x < np.argmin(dark) else x
+#  )
+#
+# img = img.point(
+#     lambda x: 255 if x > np.argmax(bright)+120 else x
+#  )
+# img.show()
 
-print(len(bright), len(dark))
+# photo = mahotas.load(str(fi), as_grey=True)
+# photo = photo.astype(np.uint8)
+img = mahotas.imread(fi, True)
+img = img.astype(np.uint8)
 
-print(np.argmin(dark), np.argmax(dark))
-print(np.argmin(bright)+128, np.argmax(bright)+128)
-img = img.point(
-    lambda x: 0 if x < np.argmin(dark) else x
- )
+T_rc = mahotas.rc(img)
+print(T_rc)
+gray()
+timg = (img > T_rc)
+imshow(timg)
+# show()
+fi = f"/home/lutsai/personal_work_ms/pythonProject/pages/train/TEXT/rc-{fname}.png"
+mahotas.imsave(fi, timg)
+T_rc = mahotas.otsu(img)
+print(T_rc)
+gray()
+timg = (img > T_rc)
+imshow(timg)
+# show()
+fi = f"/home/lutsai/personal_work_ms/pythonProject/pages/train/TEXT/otsu-{fname}.png"
+mahotas.imsave(fi, timg)
+# timg = mahotas.thresholding.bernsen(img, 10, 200)
+# gray()
+# imshow(timg)
+# show()
+#
+# fi = "/home/lutsai/personal_work_ms/pythonProject/pages/train/TEXT/rc_P043_00002_003-3.png"
+# mahotas.imsave(fi, timg)
 
-img = img.point(
-    lambda x: 255 if x > np.argmax(bright)+120 else x
- )
-img.show()
-
-img.save('img_thresholded.png')
-
-fi = "/lnet/work/people/lutsai/pythonProject/OCR/ltp-ocr/OCR_demo/img_thresholded.png"
-image = cv.imread(cv.samples.findFile(str(fi)), cv.IMREAD_GRAYSCALE)
 
 
-hist = cv.calcHist([image], [0], None, [256], [0, 256])
 
-plt.plot(hist)
-plt.show()
+# img.save('img_thresholded.png')
+
+# fi = "/lnet/work/people/lutsai/pythonProject/OCR/ltp-ocr/OCR_demo/img_thresholded.png"
+# image = cv.imread(cv.samples.findFile(str(fi)), cv.IMREAD_GRAYSCALE)
+#
+#
+# hist = cv.calcHist([image], [0], None, [256], [0, 256])
+#
+# plt.plot(hist)
+# plt.show()
 
 
 # img = process_image(fi, 20)  # Adjust 'image.jpg' with your image path and N with your desired side length
