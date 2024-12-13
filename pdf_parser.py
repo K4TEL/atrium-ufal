@@ -225,6 +225,7 @@ class PDF_parser:
     # load PDF, go through pages and save them as PNG
     def pdf_to_table(self, pdf_file: Path) -> pandas.DataFrame:
         self.update_cur_vars(pdf_file, True)
+        self.check_page_sources(pdf_file, True)
 
         if not self.cur_stats_summary_file.is_file() or self.force_stats:
             self.pdf_to_json(pdf_file)
@@ -255,8 +256,8 @@ class PDF_parser:
 
 
 # getting stats about particular element type from the layout elements
-def el_type_parse(page: deepdoctection.Page,
-                  layout: deepdoctection.Layout,
+def el_type_parse(page: dd.Page,
+                  layout: dd.Layout,
                   el_name: str,
                   el_out_dict: dict,
                   credibility: float = 0.0) -> (dict, bool):
@@ -323,7 +324,7 @@ def el_type_parse(page: deepdoctection.Page,
 
 
 # saving page with recognized elements in color
-def save_parsed_image(page: deepdoctection.Page, cur_page_image_filename: Path) -> None:
+def save_parsed_image(page: dd.Page, cur_page_image_filename: Path) -> None:
     image = page.viz()
 
     plt.figure(figsize=(16, 23))  # A4 paper ratio

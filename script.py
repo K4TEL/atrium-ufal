@@ -17,7 +17,7 @@ if __name__ == "__main__":
 
     parser = argparse.ArgumentParser(description='OCR PDF/PNG parser')
     parser.add_argument('-f', "--file", type=str, default=file_small, help="Single PDF file path")
-    parser.add_argument('-d', "--directory", type=str, default=folder_brno, help="Path to folder with PDF files")
+    parser.add_argument('-d', "--directory", type=str, default=folder_arup, help="Path to folder with PDF files")
     parser.add_argument('-c', "--cred", type=float, default=credibility, help="Minimal credibility of DeepDoctection predictions")
     parser.add_argument("--dir", help="Process whole directory", action="store_true")
     parser.add_argument("--pdf", help="Process PDF files into layouts", action="store_true")
