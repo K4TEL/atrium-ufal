@@ -17,14 +17,27 @@ from sklearn.preprocessing import MinMaxScaler
 from sklearn.ensemble import RandomForestClassifier
 
 
-max_categ = 444
+max_categ = 701
 trees = 100
+
+w_class = 0
+weight_options = ["balance", "size-prior", "priority", "no"]
+
+
 base_dir = "/lnet/work/people/lutsai/pythonProject"
-input_dir = 'pages/train_d'
+input_dir = f'pages/train_{"data" if max_categ % 100 == 0 else "balanced"}'
 test_dir = 'pages/test_data'
 
-output_dir = "results"
+large_dataset = f"{base_dir}/dataset/data_tb_1301c.h5"
+large_dataset_labels = f"{base_dir}/dataset/labels_tb_1301c.h5"
+large_dataset_name = "dataset_1301c"
 
+# large_dataset = f"{base_dir}/dataset/data_td_900c.h5" if max_categ % 100 == 0 else f"{base_dir}/dataset/data_tb_1301c.h5"
+# large_dataset_labels = f"{base_dir}/dataset/labels_td_900c.h5" if max_categ % 100 == 0 else f"{base_dir}/dataset/labels_tb_1301c.h5"
+# large_dataset_name = "dataset_900c" if max_categ % 100 == 0 else "dataset_1301c"
+
+
+output_dir = "results"
 
 category_map = {
     1: {
@@ -40,8 +53,6 @@ category_map = {
         "TEXT": ["TEXT", "TEXT_HW", "TEXT_P", "TEXT_T"]
     }
 }
-
-w_class = True
 
 
 # get list of all files in the folder and nested folders by file format
@@ -104,26 +115,24 @@ def img_to_feature(img_path):
     return global_feature
 
 
-class RFC:
-    def __init__(self, base_path: str, page_folder: str, max_category_samples: int, tree_N: int, weighted: bool):
+
+class DataWrapper:
+    def __init__(self, base_path: str, page_folder: str, max_category_samples: int):
         self.page_dir = f"{base_path}/{page_folder}"
-        self.model_dir = f"{base_path}/model"
         self.data_dir = f"{base_path}/dataset"
         self.upper_category_limit = max_category_samples
-        self.weighted_classes = weighted
 
-        self.N_trees = tree_N
-        self.test_size = 0.1
         self.seed = 42
+        self.test_size = 0.1
 
         suffix = f"{self.upper_category_limit}c"
-
-        self.h5f_data = f'data_{suffix}.h5'
-        self.h5f_labels = f'labels_{suffix}.h5'
-
         self.dataset_name = f"dataset_{suffix}"
-        self.model_name = f"model_{suffix}_{self.N_trees}t.pkl"
 
+        self.folder_abbr = "".join([w[0] for w in page_folder.split("/")[1].split("_")])
+        self.h5f_data = f'data_{self.folder_abbr}_{suffix}.h5'
+        self.h5f_labels = f'labels_{self.folder_abbr}_{suffix}.h5'
+
+        # self.categories = sorted(os.listdir(self.page_dir))
         self.categories = os.listdir(self.page_dir)
         print(f"Category input directories found: {self.categories}")
 
@@ -138,7 +147,6 @@ class RFC:
             }
         }
 
-        self.model = None
         self.scaler = MinMaxScaler(feature_range=(0, 1))
 
         self.label_priority = {i: 0 for i, v in enumerate(self.categories)}
@@ -149,7 +157,8 @@ class RFC:
                 self.general_categories.append(gen_label)
                 for i, label in enumerate(labels_list):
                     label_id = self.categories.index(label)
-                    self.label_priority[label_id] = (5 - proir) * 5 + i  # higher prior values for more important categs
+                    # self.label_priority[label_id] = (5 - proir) * 5 + i  # higher prior values for more important categs
+                    self.label_priority[label_id] = proir + i / 10
                     self.label_general[label_id] = gen_label
 
         print(f"Category mapping: {self.label_general}")
@@ -185,9 +194,6 @@ class RFC:
 
         data = np.asarray(features_data)
         labels = np.asarray(labels)
-
-        # print(data.shape, labels.shape)
-
         rescaled_features = self.scaler.fit_transform(data)
 
         # save the feature vector using HDF5
@@ -202,20 +208,36 @@ class RFC:
 
         print(f"Data {data.shape} and labels {labels.shape} saved to {self.dataset_name}")
 
-    def load_features_dataset(self):
-        h5f_data = h5py.File(f"{self.data_dir}/{self.h5f_data}", 'r+')
-        h5f_label = h5py.File(f"{self.data_dir}/{self.h5f_labels}", 'r+')
+    def load_features_dataset(self, data_path: str = None, labels_path: str = None, data_name: str = None):
+        if data_path is None and labels_path is None:
+            h5f_data = h5py.File(f"{self.data_dir}/{self.h5f_data}", 'r+')
+            h5f_label = h5py.File(f"{self.data_dir}/{self.h5f_labels}", 'r+')
+        else:
+            h5f_data = h5py.File(data_path, 'r+')
+            h5f_label = h5py.File(labels_path, 'r+')
 
         #h5f_data[self.dataset_name] = h5f_data["dataset_v2_500"]
         #h5f_label[self.dataset_name] = h5f_label["dataset_v2_500"]
         #del h5f_label["dataset_v2_500"]
         #del h5f_data["dataset_v2_500"]
 
-        global_features_string = h5f_data[self.dataset_name]
-        global_labels_string = h5f_label[self.dataset_name]
+        global_features_string = h5f_data[self.dataset_name if data_name is None else data_name]
+        global_labels_string = h5f_label[self.dataset_name if data_name is None else data_name]
 
         global_features = np.array(global_features_string)
         global_labels = np.array(global_labels_string)
+
+        ordered_categories = sorted(self.categories)
+        reordered_labels = []
+        for l in global_labels:
+            reordered_labels.append(ordered_categories.index(self.categories[l]))
+
+        reordered_labels = np.asarray(reordered_labels)
+        del h5f_label[self.dataset_name if data_name is None else data_name]
+        h5f_label.create_dataset(self.dataset_name if data_name is None else data_name, data=reordered_labels)
+
+        self.categories = ordered_categories
+        global_labels = reordered_labels
 
         h5f_data.close()
         h5f_label.close()
@@ -245,28 +267,100 @@ class RFC:
         print("Train labels: {}".format(trainLabelsGlobal.shape))
         print("Test labels : {}".format(testLabelsGlobal.shape))
 
-        for category_idx, category in enumerate(self.categories):
-            all_category_files = os.listdir(os.path.join(self.page_dir, category))
-            if len(all_category_files) > self.upper_category_limit:
-                self.label_priority[category_idx] *= 1
-            else:
-                self.label_priority[category_idx] *= 2
+        # category_size = {category: len(os.listdir(os.path.join(self.page_dir, category))) for category in self.categories}
+        # largest_size = min(self.upper_category_limit, max(category_size.values()))
+        # total_samples = sum([min(self.upper_category_limit, categ_size) for categ_size in category_size.values()])
+        #
+        # category_size_weights = {cat: total_samples / (len(self.categories) * min(self.upper_category_limit, cat_size)) for cat, cat_size in category_size.items()}
+        #
+        # print(category_size_weights)
+        #
+        # print(category_size)
+        # print(largest_size)
+        # print(total_samples)
+        #
+        # raise NotImplementedError
+        #
+        # for category_idx, category in enumerate(self.categories):
+        #     all_category_files = os.listdir(os.path.join(self.page_dir, category))
+        #     if len(all_category_files) > self.upper_category_limit:
+        #         self.label_priority[category_idx] *= 1
+        #     else:
+        #         self.label_priority[category_idx] *= 2
+
+
+class RFC:
+    def __init__(self, dataset: DataWrapper, base_path: str, max_category_samples: int, tree_N: int, weight_opt: int):
+        self.model_dir = f"{base_path}/model"
+        self.data_dir = f"{base_path}/dataset"
+        self.upper_category_limit = max_category_samples
+        self.weighted_classes = weight_options[weight_opt]
+
+        self.N_trees = tree_N
+        self.seed = 42
+
+        suffix = f"{self.upper_category_limit}c"
+        self.dataset_name = f"dataset_{suffix}"
+
+        # folder_abbr = "".join([w[0] for w in page_folder.split("/")[1].split("_")])
+        # self.h5f_data = f'data_{folder_abbr}_{suffix}.h5'
+        # self.h5f_labels = f'labels_{folder_abbr}_{suffix}.h5'
+        self.model_name = f"model_{dataset.folder_abbr}_{self.weighted_classes[0]}_{suffix}_{self.N_trees}t.pkl"
+
+        # self.categories = sorted(os.listdir(self.page_dir))
+        self.categories = dataset.categories
+        self.label_priority = dataset.label_priority
+        self.label_general = dataset.label_general
+        self.general_categories = dataset.general_categories
+        self.page_dir = dataset.page_dir
+
+        print(f"Category input directories found: {self.categories}")
+
+        self.model = None
+        self.scaler = MinMaxScaler(feature_range=(0, 1))
+
+        self.data_train = dataset.data["train"]
+        self.data_test = dataset.data["test"]
+
+
 
     def train(self):
-
-        model_file = f"{self.model_dir}/{'w_' if self.weighted_classes else ''}{self.model_name}"
+        model_file = f"{self.model_dir}/{self.model_name}"
 
         if Path(model_file).is_file():
             print(f"RFC model with current parameters already exists")
         else:
             print(f"Training RFC of {self.N_trees} trees")
-            print(f"Category weights: {self.label_priority}")
-            if self.weighted_classes:
-                clf = RandomForestClassifier(n_estimators=self.N_trees, random_state=self.seed, class_weight=self.label_priority)
-            else:
-                clf = RandomForestClassifier(n_estimators=self.N_trees, random_state=self.seed)
+            print(f"Category weights:", {self.categories[k]: v for k, v in self.label_priority.items()})
 
-            clf.fit(self.data["train"]["X"], self.data["train"]["Y"])
+            print(f"{self.weighted_classes} weights applied")
+
+            if self.weighted_classes == "no":
+                clf = RandomForestClassifier(n_estimators=self.N_trees, random_state=self.seed)
+            elif self.weighted_classes == "balance":
+                category_size = {category: len(os.listdir(os.path.join(self.page_dir, category))) for category in
+                                 self.categories}
+                total_samples = sum(
+                    [min(self.upper_category_limit, categ_size) for categ_size in category_size.values()])
+                category_size_weights = {
+                    cat: total_samples / (len(self.categories) * min(self.upper_category_limit, cat_size)) for
+                    cat, cat_size in category_size.items()}
+                print({self.categories.index(k) : v for k, v in category_size_weights.items()}, "weights")
+                clf = RandomForestClassifier(n_estimators=self.N_trees, random_state=self.seed, class_weight="balanced")
+            elif self.weighted_classes == "priority":
+                reverse_proir = {k: 1/v for k, v in self.label_priority.items()}
+                print({self.categories[k] : v for k, v in reverse_proir.items()}, "weights")
+                clf = RandomForestClassifier(n_estimators=self.N_trees, random_state=self.seed, class_weight=reverse_proir)
+            elif self.weighted_classes == "size-prior":
+                category_size = {category: len(os.listdir(os.path.join(self.page_dir, category))) for category in self.categories}
+                total_samples = sum([min(self.upper_category_limit, cs) for cs in category_size.values()])
+
+                category_size_weights = {self.categories.index(cat): total_samples / (len(self.categories) * min(self.upper_category_limit, cat_size))
+                         - self.label_priority[self.categories.index(cat)] / 10 for cat, cat_size in category_size.items()}
+                print({self.categories[k] : v for k, v in category_size_weights.items()}, "weights")
+                clf = RandomForestClassifier(n_estimators=self.N_trees, random_state=self.seed, class_weight=category_size_weights)
+
+            clf.fit(self.data_train["X"], self.data_train["Y"])
 
             with open(model_file, 'wb') as f:
                 pickle.dump(clf, f)
@@ -277,7 +371,7 @@ class RFC:
             self.model = pickle.load(f)
 
         # fast eval
-        acc = self.model.score(self.data["test"]["X"], self.data["test"]["Y"])
+        acc = self.model.score(self.data_test["X"], self.data_test["Y"])
         print(f"Model accuracy:\t{round(acc * 100, 2)}%")
 
     def test(self):
@@ -288,22 +382,26 @@ class RFC:
 
             print(f"Model loaded from {self.model_name}")
 
-        predictions = self.model.predict(self.data["test"]["X"])
+        predictions = self.model.predict(self.data_test["X"])
         print('Percentage correct: ',
-              round(100 * np.sum(predictions == self.data["test"]["Y"]) / len(self.data["test"]["Y"]), 2))
+              round(100 * np.sum(predictions == self.data_test["Y"]) / len(self.data_test["Y"]), 2))
 
-        disp = ConfusionMatrixDisplay.from_predictions(self.data["test"]["Y"], predictions,
+        disp = ConfusionMatrixDisplay.from_predictions(self.data_test["Y"], predictions,
                                                        normalize="true", display_labels=np.array(self.categories))
 
         print(f"\t{' '.join(disp.display_labels)}")
         for ir, row in enumerate(disp.confusion_matrix):
             print(f"{disp.display_labels[ir]}\t{'   '.join([str(val) if val > 0 else ' -- ' for val in np.round(row, 2)])}")
 
-        plt.savefig(f'{"w_" if self.weighted_classes else ""}conf_{self.upper_category_limit}c_{self.N_trees}t.png', bbox_inches='tight')
+        disp.ax_.set_title(f"{self.weighted_classes[0]} {self.upper_category_limit}c {self.N_trees}t  Full CM folder: {input_dir}")
+        plt.savefig(f'conf_{self.weighted_classes[0]}_{self.upper_category_limit}c_{self.N_trees}t.png', bbox_inches='tight')
         plt.close()
 
+
+
+
         general_prediction = np.array([self.general_categories.index(self.label_general[l]) for l in predictions])
-        gegeral_truth = np.array([self.general_categories.index(self.label_general[l]) for l in self.data["test"]["Y"]])
+        gegeral_truth = np.array([self.general_categories.index(self.label_general[l]) for l in self.data_test["Y"]])
 
         print('General percentage correct: ', round(100 * np.sum(general_prediction == gegeral_truth) / len(gegeral_truth), 2))
 
@@ -314,16 +412,31 @@ class RFC:
         for ir, row in enumerate(disp_gen.confusion_matrix):
             print(f"{disp_gen.display_labels[ir]}\t{'   '.join([str(val) if val > 0 else ' -- ' for val in np.round(row, 2)])}")
 
-        plt.savefig(f'{"w_" if self.weighted_classes else ""}gen_conf_{self.upper_category_limit}c_{self.N_trees}t.png', bbox_inches='tight')
+        disp_gen.ax_.set_title(f"{self.weighted_classes[0]} {self.upper_category_limit}c {self.N_trees}t  General CM folder: {input_dir}")
+        plt.savefig(f'gen_conf_{self.weighted_classes[0]}_{self.upper_category_limit}c_{self.N_trees}t.png', bbox_inches='tight')
         plt.close()
 
     def predict_single(self, image_file: str):
+        if self.model is None:
+            # load
+            with open(f"{self.model_dir}/{self.model_name}", 'rb') as f:
+                self.model = pickle.load(f)
+
+            print(f"Model loaded from {self.model_name}")
+
         feature = img_to_feature(image_file)
 
         category_distrib = self.model.predict_proba(feature.reshape(1, -1))[0]
         return category_distrib, self.categories[np.argmax(category_distrib)]
 
-    def predict_directory(self, folder_path: str, n: int, out_table: str = None):
+    def predict_directory(self, folder_path: str, n: int, out_table: str = None, rename: bool = False):
+        if self.model is None:
+            # load
+            with open(f"{self.model_dir}/{self.model_name}", 'rb') as f:
+                self.model = pickle.load(f)
+
+            print(f"Model loaded from {self.model_name}")
+
         images = directory_scraper(Path(folder_path), "png")
         data_features, data_ids = [], []
 
@@ -339,9 +452,9 @@ class RFC:
         category_distrib = self.model.predict_proba(data_features)
 
         categories = np.argmax(category_distrib, axis=1)
+        labels = [self.categories[c] for c in categories]
 
         if out_table is not None:
-            labels = [self.categories[c] for c in categories]
             scores = np.max(category_distrib, axis=1)
             filenames = [d.split("-")[0] for d in data_ids]
             page_nums = [d.split("-")[1] for d in data_ids]
@@ -351,18 +464,114 @@ class RFC:
             df = pd.DataFrame(dict)
             df.to_csv(out_table, sep=",")
 
+        if rename:
+            for image_name, image_label in zip(data_ids, labels):
+                original = f"{folder_path}/{image_name}.png"
+
+                short_label = image_label[0]
+                if "_" in image_label:
+                    short_label += image_label[image_label.index("_")+1]
+
+                new_name = f"{folder_path}/{short_label}_{image_name}.png"
+
+                os.rename(original, new_name)
+
         return category_distrib, [self.categories[c] for c in categories]
 
 
-RandomForest_classifier = RFC(base_dir, input_dir, max_categ, trees, w_class)
 
-RandomForest_classifier.process_page_directory()
-RandomForest_classifier.load_features_dataset()
-RandomForest_classifier.train()
+class PDO:
+    def __init__(self, swarm_size: int):
+        self.swarn_N = swarm_size
+        self.iter = 100
+
+        self.w_inertia = 0.2
+        self.acc_personal = 1
+        self.acc_social = 2
+
+        self.lower_limit = 0.0
+        self.upper_limit = 1.0
+
+
+    def gen_init(self, dim_N: int):
+        return np.random.uniform(self.lower_limit, self.upper_limit, (self.swarn_N, dim_N))
+
+
+
+
+from sklearn.linear_model import LogisticRegression, SGDClassifier
+from sklearn.tree import DecisionTreeClassifier
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.neighbors import KNeighborsClassifier
+from sklearn.discriminant_analysis import LinearDiscriminantAnalysis
+from sklearn.naive_bayes import GaussianNB
+from sklearn.svm import SVC
+from sklearn.model_selection import GridSearchCV, KFold, StratifiedKFold
+
+
+
+
+Dataset = DataWrapper(base_dir, input_dir, max_categ)
+Dataset.process_page_directory()
+Dataset.load_features_dataset()
+
+d = Dataset.data["train"]
+seed = 42
+
+print(d)
+# print(d.shape)
+# print(np.max(d))
+# print(np.min(d))
+
+# def models_train(X, Y):
+#     # create all the machine learning models
+#     models = []
+#     models.append(('LR', LogisticRegression(random_state=seed)))
+#     models.append(('LDA', LinearDiscriminantAnalysis()))
+#     models.append(('KNN', KNeighborsClassifier()))
+#     models.append(('CART', DecisionTreeClassifier(random_state=seed)))
+#     models.append(('RF', RandomForestClassifier(n_estimators=100, random_state=seed)))
+#     models.append(('NB', GaussianNB()))
+#     models.append(('SVM', SGDClassifier(random_state=seed)))
+#     models.append(('SGD', SVC(random_state=seed)))
+#
+#     # variables to hold the results and names
+#     results = []
+#     names = []
+#     # 10-fold cross validation
+#     for name, model in models:
+#         kfold = KFold(n_splits=10, random_state=seed, shuffle=True)
+#         cv_results = cross_val_score(model, X, Y, cv=kfold, scoring="accuracy")
+#         results.append(cv_results)
+#         names.append(name)
+#         msg = "%s: %f (%f)" % (name, cv_results.mean(), cv_results.std())
+#         print(msg)
+#
+#     # boxplot algorithm comparison
+#     fig = plt.figure()
+#     fig.suptitle('Machine Learning algorithm comparison')
+#     ax = fig.add_subplot(111)
+#     plt.boxplot(results)
+#     ax.set_xticklabels(names)
+#     plt.show()
+
+# models_train(d["X"], d["Y"])
+
+RandomForest_classifier = RFC(Dataset, base_dir, max_categ, trees, w_class)
+
+
+
+# RandomForest_classifier.load_features_dataset(large_dataset, large_dataset_labels, large_dataset_name)
+
+# RandomForest_classifier.train()
 RandomForest_classifier.test()
 
-c, pred = RandomForest_classifier.predict_single(os.path.join(base_dir, test_dir, "CTX194604301-15.png"))
-print(c, pred)
-#cs, preds = RandomForest_classifier.predict_directory(os.path.join(base_dir, test_dir), 5, os.path.join(base_dir, output_dir, "res.csv"))
-#print(cs, preds)
+rfc_params = RandomForest_classifier.model.get_params()
+
+print(rfc_params)
+
+# c, pred = RandomForest_classifier.predict_single(os.path.join(base_dir, test_dir, "CTX194604301-15.png"))
+# print(c, pred)
+# cs, preds = RandomForest_classifier.predict_directory(os.path.join(base_dir, test_dir), 1120, os.path.join(base_dir, output_dir, "res.csv"), True)
+# print(cs, preds)
 
