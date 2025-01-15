@@ -16,6 +16,9 @@ from sklearn.metrics import accuracy_score, confusion_matrix, classification_rep
 from sklearn.preprocessing import MinMaxScaler
 from sklearn.ensemble import RandomForestClassifier
 
+from pathos.multiprocessing import ProcessingPool as Pool
+
+
 
 # get list of all files in the folder and nested folders by file format
 def directory_scraper(folder_path: Path, file_format: str = "png", file_list: list = None) -> list[str]:
@@ -76,6 +79,24 @@ def img_to_feature(img_path):
 
     return global_feature
 
+
+def batch_process_images(image_batch, folder_path):
+    """Process a batch of images into features and IDs."""
+    data_features, data_ids = [], []
+    for image_file in image_batch:
+        img_path = os.path.join(folder_path, image_file)
+        feature = img_to_feature(img_path)
+        data_features.append(feature)
+        data_ids.append(Path(img_path).stem)
+    return data_features, data_ids
+
+
+def append_to_csv(df, filepath):
+    """Append DataFrame to CSV file, or create a new file if it doesn't exist."""
+    if not os.path.exists(filepath):
+        df.to_csv(filepath, index=False, sep=",")
+    else:
+        df.to_csv(filepath, mode="a", header=False, index=False, sep=",")
 
 
 class DataWrapper:
@@ -471,7 +492,7 @@ class RFC:
         category_distrib = self.model.predict_proba(feature.reshape(1, -1))[self.top_N if N is None else N]
         return category_distrib, self.categories[np.argmax(category_distrib)]
 
-    def predict_directory(self, folder_path: str, n: int, out_table: str = None, raw: bool = False):
+    def predict_directory(self, folder_path: str, batch_size: int, out_table: str = None, raw: bool = False):
         if self.model is None:
             # load
             with open(f"{self.model_dir}/{self.model_name}", 'rb') as f:
@@ -480,59 +501,96 @@ class RFC:
             print(f"Model loaded from {self.model_name}")
 
         images = directory_scraper(Path(folder_path), "png")
-        data_features, data_ids = [], []
 
-        random.shuffle(images)
-        images = images[:n]
+        print(f"Predicting {len(images)} images from {folder_path}")
 
-        print(f"Predicting {n} images from {folder_path}")
+        res_table, raw_table = [], []
 
-        for image_file in images:
-            img_path = os.path.join(folder_path, image_file)
-            feature = img_to_feature(img_path)
-            data_features.append(feature)
-            data_ids.append(Path(img_path).stem)
+        for batch_start in range(0, len(images), batch_size):
+            batch_images = images[batch_start:batch_start + batch_size]
 
-        print(f"Predicting {len(data_features)} images with {self.top_N} guesses")
+            with Pool() as pool:
+                results = pool.map(batch_process_images, [batch_images], [folder_path])
 
-        best_n_scores_normal, best_n, raw_scores = self.top_N_prediction(data_features, self.top_N)
+            for data_features, data_ids in results:
+                best_n_scores_normal, best_n, raw_scores = self.top_N_prediction(data_features, self.top_N)
 
-        res_table = []
-        for i, image_f in images:
-            categ_labels = [self.categories[c] for c in best_n[i]]
-            categ_scores = np.round(best_n_scores_normal[i], 3)
-            image_filename = data_ids[i].replace("_", "-")
-            image_filename = image_filename.replace("-page-", "-")
-            img_file, img_page = image_filename.split("-")
-            res_table.append([img_file, img_page, categ_labels, categ_scores])
+                for i, image_f in enumerate(batch_images):
+                    categ_labels = [self.categories[c] for c in best_n[i]]
+                    categ_scores = np.round(best_n_scores_normal[i], 3)
+                    image_filename = data_ids[i].replace("_", "-").replace("-page-", "-")
+                    img_file, img_page = image_filename.split("-")
+                    res_table.append([img_file, img_page, categ_labels, categ_scores])
 
-        # categories = np.argmax(category_distrib, axis=1)
-        # labels = [self.categories[c] for c in categories]
+                    if raw:
+                        raw_row = list(raw_scores[i]) + [img_file, img_page]
+                        raw_table.append(raw_row)
 
-        if out_table is not None:
-            columns = ["FILE", "PAGE"]
-            for i in range(self.top_N):
-                columns.append(f"CLASS-{i+1}")
-            for i in range(self.top_N):
-                columns.append(f"SCORE-{i+1}")
+                # Append to top-N output
+                if out_table is not None:
+                    columns = ["FILE", "PAGE"] + \
+                              [f"CLASS-{i + 1}" for i in range(self.top_N)] + \
+                              [f"SCORE-{i + 1}" for i in range(self.top_N)]
+                    top_n_df = pd.DataFrame(res_table, columns=columns)
+                    append_to_csv(top_n_df, out_table)
 
-            df = pd.DataFrame(res_table, columns=columns)
+                # Append to raw output
+                if raw:
+                    raw_columns = self.categories + ["FILE", "PAGE"]
+                    raw_df = pd.DataFrame(raw_table, columns=raw_columns)
+                    raw_output_path = f'{self.output_dir}/tables/raw_result_{self.top_N}n_{self.weighted_classes[0]}_{self.upper_category_limit}c_{self.N_trees}t.csv'
+                    append_to_csv(raw_df, raw_output_path)
 
-            print(df)
+        print("Processing completed.")
 
-            df.to_csv(out_table, sep=",", index=False)
-
-            if raw:
-                raw_df = pd.DataFrame(raw_scores, columns=self.categories)
-
-                raw_df["FILE"] = [d.split("-")[0] for d in data_ids]
-                raw_df["PAGE"] = [d.split("-")[1] for d in data_ids]
-
-                print(raw_df)
-
-                raw_df.to_csv(
-                    f'{self.output_dir}/tables/raw_result_{self.top_N}n_{self.weighted_classes[0]}_{self.upper_category_limit}c_{self.N_trees}t.csv',
-                    index=False, sep=",")
+        # print(f"Predicting {n} images from {folder_path}")
+        #
+        # # for image_file in images:
+        # #     img_path = os.path.join(folder_path, image_file)
+        # #     feature = img_to_feature(img_path)
+        # #     data_features.append(feature)
+        # #     data_ids.append(Path(img_path).stem)
+        #
+        # print(f"Predicting {len(data_features)} images with {self.top_N} guesses")
+        #
+        # best_n_scores_normal, best_n, raw_scores = self.top_N_prediction(data_features, self.top_N)
+        #
+        # res_table = []
+        # for i, image_f in images:
+        #     categ_labels = [self.categories[c] for c in best_n[i]]
+        #     categ_scores = np.round(best_n_scores_normal[i], 3)
+        #     image_filename = data_ids[i].replace("_", "-")
+        #     image_filename = image_filename.replace("-page-", "-")
+        #     img_file, img_page = image_filename.split("-")
+        #     res_table.append([img_file, img_page, categ_labels, categ_scores])
+        #
+        # # categories = np.argmax(category_distrib, axis=1)
+        # # labels = [self.categories[c] for c in categories]
+        #
+        # if out_table is not None:
+        #     columns = ["FILE", "PAGE"]
+        #     for i in range(self.top_N):
+        #         columns.append(f"CLASS-{i+1}")
+        #     for i in range(self.top_N):
+        #         columns.append(f"SCORE-{i+1}")
+        #
+        #     df = pd.DataFrame(res_table, columns=columns)
+        #
+        #     print(df)
+        #
+        #     df.to_csv(out_table, sep=",", index=False)
+        #
+        #     if raw:
+        #         raw_df = pd.DataFrame(raw_scores, columns=self.categories)
+        #
+        #         raw_df["FILE"] = [d.split("-")[0] for d in data_ids]
+        #         raw_df["PAGE"] = [d.split("-")[1] for d in data_ids]
+        #
+        #         print(raw_df)
+        #
+        #         raw_df.to_csv(
+        #             f'{self.output_dir}/tables/raw_result_{self.top_N}n_{self.weighted_classes[0]}_{self.upper_category_limit}c_{self.N_trees}t.csv',
+        #             index=False, sep=",")
 
         # if rename:
         #     for image_name, image_label in zip(data_ids, labels):
