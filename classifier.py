@@ -17,6 +17,7 @@ from sklearn.preprocessing import MinMaxScaler
 from sklearn.ensemble import RandomForestClassifier
 
 from pathos.multiprocessing import ProcessingPool as Pool
+import multiprocessing as mp
 
 
 
@@ -490,9 +491,9 @@ class RFC:
         feature = img_to_feature(image_file)
 
         category_distrib = self.model.predict_proba(feature.reshape(1, -1))[self.top_N if N is None else N]
-        return category_distrib, self.categories[np.argmax(category_distrib)]
+        return category_distrib, self.categories[np.argmax(category_distrib, axis=0)]
 
-    def predict_directory(self, folder_path: str, batch_size: int, out_table: str = None, raw: bool = False):
+    def predict_directory(self, folder_path: str, batch_size: int = None, out_table: str = None, raw: bool = False):
         if self.model is None:
             # load
             with open(f"{self.model_dir}/{self.model_name}", 'rb') as f:
@@ -506,10 +507,12 @@ class RFC:
 
         res_table, raw_table = [], []
 
+        batch_size = mp.cpu_count() if batch_size is None else batch_size
+
         for batch_start in range(0, len(images), batch_size):
             batch_images = images[batch_start:batch_start + batch_size]
 
-            with Pool() as pool:
+            with Pool(ncpu=mp.cpu_count()) as pool:
                 results = pool.map(batch_process_images, [batch_images], [folder_path])
 
             for data_features, data_ids in results:

@@ -49,7 +49,7 @@ if __name__ == "__main__":
 
     parser = argparse.ArgumentParser(description='Page sorter based on RFC')
     parser.add_argument('-f', "--file", type=str, default=test_file, help="Single PNG page path")
-    parser.add_argument('-d', "--directory", type=str, default=input_dir, help="Path to folder with PNG pages")
+    parser.add_argument('-d', "--directory", type=str, default=None, help="Path to folder with PNG pages")
     parser.add_argument('-tn', "--topn", type=int, default=top_N, help="Number of top result categories to consider")
     parser.add_argument('-w', "--weight", type=int, default=w_class, help='By index from "balance"(D), "size-prior", "priority", and "no" options')
     parser.add_argument('-t', "--tree", type=int, default=trees, help="Number of trees in the Random Forest classifier")
@@ -62,11 +62,12 @@ if __name__ == "__main__":
 
     cur = Path.cwd() #  directory with this script
     # locally creating new directory pathes instead of .env variables loaded with mistakes
-    page_images_folder = Path(os.environ.get('FOLDER_PAGES', cur / "pages"))  # weights a lot, contains grayscale page images, detected layouts and line plots
-    output_dir = Path(os.environ.get('FOLDER_RESULTS', cur / "results"))  # weights a little, page and pdf level summaries with classified categories in csv format
+    output_dir = Path(os.environ.get('FOLDER_RESULTS', cur / "results"))
+    page_images_folder = Path(os.environ.get('FOLDER_PAGES', cur / "pages"))
+    input_dir = Path(os.environ.get('FOLDER_INPUT', cur / test_dir)) if args.directory is None else Path(args.directory)
 
     Dataset = DataWrapper(base_dir,
-                          args.directory,
+                          str(input_dir),
                           max_categ,
                           category_map)
     Dataset.process_page_directory()
@@ -79,22 +80,22 @@ if __name__ == "__main__":
                                   args.tree,
                                   weight_options[args.weight],
                                   args.topn,
-                                  str(Path(cur / output_dir)))
+                                  str(output_dir))
 
     RandomForest_classifier.train(args.train)
     RandomForest_classifier.test("final")
 
-    rfc_params = RandomForest_classifier.model.get_params()
-
-    print(rfc_params)
-
-    directory_result_output = Path(cur / f'{output_dir}/tables/raw_result_{args.topn}n_{args.weight[0]}_{max_categ}c_{args.tree}t.csv')
+    # rfc_params = RandomForest_classifier.model.get_params()
+    # print(rfc_params)
 
     c, pred = RandomForest_classifier.predict_single(str(Path(cur / f"{test_dir}/{args.file}")))
+    print(RandomForest_classifier.categories)
     print(c, pred)
 
     if args.dir:
-        RandomForest_classifier.predict_directory(os.path.join(base_dir, args.input_dir), 5, str(directory_result_output), True)
+        directory_result_output = str(
+            Path(cur / f'{output_dir}/tables/raw_result_{args.topn}n_{args.weight[0]}_{max_categ}c_{args.tree}t.csv'))
+        RandomForest_classifier.predict_directory(str(input_dir), raw=True, out_table=directory_result_output)
 
 
 
