@@ -1,110 +1,42 @@
 import os
 import pickle
-import cv2
-import mahotas
-from pylab import imshow, gray, show
-import h5py
+from collections import Counter
 import random
-from mpl_toolkits.axes_grid1 import make_axes_locatable
-from matplotlib import pyplot as plt
 from pathlib import Path
 
-from skimage.io import imread
-from skimage.transform import resize, rescale
+import cv2
+import mahotas
+import h5py
+from matplotlib import pyplot as plt
 import numpy as np
+import pandas as pd
+
 from sklearn.model_selection import train_test_split, cross_val_score
-from sklearn.model_selection import GridSearchCV, KFold, StratifiedKFold
-from sklearn.svm import SVC
 from sklearn.metrics import accuracy_score, confusion_matrix, classification_report, ConfusionMatrixDisplay
-from sklearn.base import BaseEstimator, TransformerMixin
-from sklearn.preprocessing import StandardScaler, Normalizer, MinMaxScaler
-from skimage.feature import hog
-
-from sklearn.linear_model import LogisticRegression, SGDClassifier
-from sklearn.tree import DecisionTreeClassifier
+from sklearn.preprocessing import MinMaxScaler
 from sklearn.ensemble import RandomForestClassifier
-from sklearn.neighbors import KNeighborsClassifier
-from sklearn.discriminant_analysis import LinearDiscriminantAnalysis
-from sklearn.naive_bayes import GaussianNB
-# from sklearn.externals import joblib
 
 
-from wand.image import Image
-from wand.display import display
+# get list of all files in the folder and nested folders by file format
+def directory_scraper(folder_path: Path, file_format: str = "png", file_list: list = None) -> list[str]:
+    if file_list is None:
+        file_list = []
+    file_list += list(folder_path.rglob(f"*.{file_format}"))
+    print(f"[ {file_format.upper()} ] \tFrom directory {folder_path} collected {len(file_list)} {file_format} files")
+    return file_list
 
-upper_category_limit = 500
-
-suffix = f"v2_{upper_category_limit}"
-
-# prepare data
-input_dir = '/lnet/work/people/lutsai/pythonProject/pages/train_data'
-categories = os.listdir(input_dir)
-print(categories)
-w, h = 256, 256  # scaled weight and height
-hw, hh = 1024, 1024  # hog scaled weight and height
-margin = 40  # border to be erased
-
-seed = 42
-num_trees = 100
-test_size = 0.1
-
-datasets_directory = "/lnet/work/people/lutsai/pythonProject/dataset"
-models_directory = "/lnet/work/people/lutsai/pythonProject/model"
-
-
-h5_images = f"images_{suffix}.h5"
-h5_data = f'data_{suffix}.h5'
-h5_labels = f'labels_{suffix}.h5'
-h5_hog = f"hog_{suffix}.h5"
-
-dataset_name = f"dataset_{suffix}"
-model_name = f"model_{suffix}.pkl"
-
-scaler = MinMaxScaler(feature_range=(0, 1))
-
-
-
-class HogTransformer(BaseEstimator, TransformerMixin):
-    """
-    Expects an array of 2d arrays (1 channel images)
-    Calculates hog features for each img
-    """
-
-    def __init__(self, y=None, orientations=9,
-                 pixels_per_cell=(8, 8),
-                 cells_per_block=(3, 3), block_norm='L2-Hys'):
-        self.y = y
-        self.orientations = orientations
-        self.pixels_per_cell = pixels_per_cell
-        self.cells_per_block = cells_per_block
-        self.block_norm = block_norm
-
-    def fit(self, X, y=None):
-        return self
-
-    def transform(self, X, y=None):
-
-        def local_hog(X):
-            return hog(X,
-                       orientations=self.orientations,
-                       pixels_per_cell=self.pixels_per_cell,
-                       cells_per_block=self.cells_per_block,
-                       block_norm=self.block_norm)
-
-        try:  # parallel
-            return np.array([local_hog(img) for img in X])
-        except:
-            return np.array([local_hog(img) for img in X])
 
 # feature-descriptor-1: Hu Moments
 def fd_hu_moments(image, bin=False):
     feature = cv2.HuMoments(cv2.moments(image, bin)).flatten()
     return feature
 
+
 # feature-descriptor-2: Haralick Texture
 def fd_haralick(image):
     haralick = mahotas.features.haralick(image).mean(axis=0)
     return haralick
+
 
 # feature-descriptor-3: Color Histogram
 def fd_histogram(image, mask=None):
@@ -113,381 +45,505 @@ def fd_histogram(image, mask=None):
     return hist.flatten()
 
 
-def image_fill_edges_square(image, margin):
-    iw, ih = image.shape
+def img_to_feature(img_path):
+    img = cv2.imread(img_path, cv2.IMREAD_GRAYSCALE)
 
-    image_core = image[margin:-margin, margin:-margin]
-    # print(image_core.shape, image.shape)
-    icw, ich = image.shape
+    if img is None:
+        return None
 
-    pad_top, pad_right, pad_bottom, pad_left = margin, margin, margin, margin
-    if iw > ih:
-        diff = icw - ich
-        pad_top += int(diff/2)
-        pad_bottom += diff - int(diff / 2)
-    elif ih > iw:
-        diff = ich - icw
-        pad_left += int(diff / 2)
-        pad_right += diff - int(diff / 2)
-    else:
-        return image
+    fv_hu_moments, fv_haralick, fv_histogram = fd_hu_moments(img), fd_haralick(img), fd_histogram(img)
 
-    # print(pad_top, pad_right, pad_bottom, pad_left)
-    result = np.pad(image_core, ((pad_left, pad_right), (pad_top, pad_bottom)), mode='maximum')
-    return result
+    threshold = mahotas.otsu(img)
+    binarized_image = np.where(img > threshold, 255, 0)
+    iw, ih = binarized_image.shape
 
+    bi_fv_hu_moments, bi_fv_haralick = fd_hu_moments(binarized_image, True), fd_haralick(
+        binarized_image)
 
-def process_directory_to_dataset(data_folder, data_categories, out_feature, out_image, out_label,
-                                 dataset_name, image_preprocess=False):
-    scaled_images, features_data, labels = [], [], []
-
-    f_data, f_image, f_label = f"{datasets_directory}/{out_feature}", f"{datasets_directory}/{out_image}", f"{datasets_directory}/{out_label}"
-
-    for category_idx, category in enumerate(data_categories):
-        for i, file in enumerate(os.listdir(os.path.join(data_folder, category))):
-            print(i, file, category)
-            img_path = os.path.join(data_folder, category, file)
-            img = cv2.imread(img_path, cv2.IMREAD_GRAYSCALE)
-
-            fv_hu_moments, fv_haralick, fv_histogram = fd_hu_moments(img), fd_haralick(img), fd_histogram(img)
-
-            if image_preprocess:
-                threshold = mahotas.otsu(img)
-                timg = np.where(img > threshold, 255, 0)
-                padded = image_fill_edges_square(timg, margin)
-                # img_path = os.path.join(input_dir, category, f"pad-{file}")
-                cv2.imwrite(img_path, padded)
-                print(img.shape, "->", padded.shape)
-                small_img = resize(padded, (w, h))
+    black, white = 0, 0
+    for r in range(iw):
+        for c in range(ih):
+            if binarized_image[r, c] > 0:
+                white += 1
             else:
-                small_img = resize(img, (w, h))
+                black += 1
+
+    area = iw * ih
+    bi_fv_histogram = [black / area, white / area]
 
-            global_feature = np.hstack([fv_histogram, fv_haralick, fv_hu_moments])
+    global_feature = np.hstack([fv_histogram, fv_haralick, fv_hu_moments,
+                                bi_fv_haralick, bi_fv_hu_moments, bi_fv_histogram])
 
-            scaled_images.append(small_img.flatten())
-            features_data.append(global_feature)
-            labels.append(category_idx)
+    return global_feature
+
+
+
+class DataWrapper:
+    def __init__(self, base_path: str, page_folder: str, max_category_samples: int, category_map: dict):
+        self.page_dir = f"{base_path}/{page_folder}"
+        self.data_dir = f"{base_path}/dataset"
+        self.upper_category_limit = max_category_samples
+
+        self.seed = 42
+        self.test_size = 0.1
 
-    scaled_images = np.asarray(scaled_images)
-    data = np.asarray(features_data)
-    labels = np.asarray(labels)
+        suffix = f"{self.upper_category_limit}c"
+        self.dataset_name = f"dataset_{suffix}"
 
-    print(scaled_images.shape, data.shape, labels.shape)
+        self.folder_abbr = "".join([w[0] for w in page_folder.split("/")[1].split("_")])
+        self.h5f_data = f'data_{self.folder_abbr}_{suffix}.h5'
+        self.h5f_labels = f'labels_{self.folder_abbr}_{suffix}.h5'
 
-    rescaled_features = scaler.fit_transform(data)
+        # self.categories = sorted(os.listdir(self.page_dir))
+        self.categories = os.listdir(self.page_dir)
+        print(f"Category input directories found: {self.categories}")
 
-    # save the feature vector using HDF5
-    h5f_data = h5py.File(f_data, 'w')
-    h5f_data.create_dataset(dataset_name, data=np.array(rescaled_features))
+        self.data = {
+            "train": {
+                "X": None,
+                "Y": None
+            },
+            "test": {
+                "X": None,
+                "Y": None
+            }
+        }
 
-    h5f_label = h5py.File(f_label, 'w')
-    h5f_label.create_dataset(dataset_name, data=labels)
+        self.scaler = MinMaxScaler(feature_range=(0, 1))
 
-    h5f_image = h5py.File(f_image, 'w')
-    h5f_image.create_dataset(dataset_name, data=scaled_images)
+        self.label_priority = {i: 0 for i, v in enumerate(self.categories)}
+        self.label_general = {i: v for i, v in enumerate(self.categories)}
+        self.general_categories = []
+        for proir, label_dict in category_map.items():
+            for gen_label, labels_list in label_dict.items():
+                self.general_categories.append(gen_label)
+                for i, label in enumerate(labels_list):
+                    label_id = self.categories.index(label)
+                    # self.label_priority[label_id] = (5 - proir) * 5 + i  # higher prior values for more important categs
+                    self.label_priority[label_id] = proir + i / 10
+                    self.label_general[label_id] = gen_label
 
-    h5f_data.close()
-    h5f_label.close()
-    h5f_image.close()
+        print(f"Category mapping: {self.label_general}")
+        print(f"Category priority: {self.label_priority}")
 
+    def process_page_directory(self):
 
-def process_dir_to_dataset(data_folder, data_categories, out_feature, out_label,
-                                 dataset_name, image_preprocess=True):
-    features_data, labels = [], []
+        data_path = f"{self.data_dir}/{self.h5f_data}"
+        label_path = f"{self.data_dir}/{self.h5f_labels}"
 
-    f_data, f_label = f"{datasets_directory}/{out_feature}", f"{datasets_directory}/{out_label}"
+        if Path(data_path).is_file() and Path(label_path).is_file():
+            print(f"Dataset {self.dataset_name} has been already processed")
+            return
+        else:
+            print(f"{self.data_dir}/{self.h5f_data}", f"{self.data_dir}/{self.h5f_labels}")
 
-    for category_idx, category in enumerate(data_categories):
-        all_category_files = os.listdir(os.path.join(data_folder, category))
-        if len(all_category_files) > upper_category_limit:
-            random.shuffle(all_category_files)
-            all_category_files = all_category_files[:upper_category_limit]
+        features_data, labels = [], []
 
-        for i, file in enumerate(all_category_files):
-            print(i, file, category)
-            img_path = os.path.join(data_folder, category, file)
-            img = cv2.imread(img_path, cv2.IMREAD_GRAYSCALE)
+        for category_idx, category in enumerate(self.categories):
+            all_category_files = os.listdir(os.path.join(self.page_dir, category))
+            if len(all_category_files) > self.upper_category_limit:
+                random.shuffle(all_category_files)
+                all_category_files = all_category_files[:self.upper_category_limit]
+
+            for i, file in enumerate(all_category_files):
+                print(i, file, category)
+                img_path = os.path.join(self.page_dir, category, file)
+                global_feature = img_to_feature(img_path)
+
+                if global_feature is not None:
+                    features_data.append(global_feature)
+                    labels.append(category_idx)
+
+        data = np.asarray(features_data)
+        labels = np.asarray(labels)
+        rescaled_features = self.scaler.fit_transform(data)
 
-            # print(img.shape)
+        # save the feature vector using HDF5
+        h5f_data = h5py.File(data_path, 'w')
+        h5f_data.create_dataset(self.dataset_name, data=np.array(rescaled_features))
 
-            fv_hu_moments, fv_haralick, fv_histogram = fd_hu_moments(img), fd_haralick(img), fd_histogram(img)
+        h5f_label = h5py.File(label_path, 'w')
+        h5f_label.create_dataset(self.dataset_name, data=labels)
 
-            if image_preprocess:
-                threshold = mahotas.otsu(img)
-                binarized_image = np.where(img > threshold, 255, 0)
-                iw, ih = binarized_image.shape
+        h5f_data.close()
+        h5f_label.close()
 
-                # print(binarized_image.shape)
+        print(f"Data {data.shape} and labels {labels.shape} saved to {self.dataset_name}")
 
-                bi_fv_hu_moments, bi_fv_haralick = fd_hu_moments(binarized_image, True), fd_haralick(binarized_image)
+    def load_features_dataset(self, data_path: str = None, labels_path: str = None, data_name: str = None):
+        if data_path is None and labels_path is None:
+            h5f_data = h5py.File(f"{self.data_dir}/{self.h5f_data}", 'r+')
+            h5f_label = h5py.File(f"{self.data_dir}/{self.h5f_labels}", 'r+')
+        else:
+            h5f_data = h5py.File(data_path, 'r+')
+            h5f_label = h5py.File(labels_path, 'r+')
 
-                black, white = 0, 0
-                for r in range(iw):
-                    for c in range(ih):
-                        if binarized_image[r, c] > 0:
-                            white += 1
-                        else:
-                            black += 1
+        #h5f_data[self.dataset_name] = h5f_data["dataset_v2_500"]
+        #h5f_label[self.dataset_name] = h5f_label["dataset_v2_500"]
+        #del h5f_label["dataset_v2_500"]
+        #del h5f_data["dataset_v2_500"]
 
-                area = iw * ih
-                bi_fv_histogram = [black/area, white/area]
+        global_features_string = h5f_data[self.dataset_name if data_name is None else data_name]
+        global_labels_string = h5f_label[self.dataset_name if data_name is None else data_name]
 
-                global_feature = np.hstack([fv_histogram, fv_haralick, fv_hu_moments,
-                                            bi_fv_haralick, bi_fv_hu_moments, bi_fv_histogram])
-            else:
-                global_feature = np.hstack([fv_histogram, fv_haralick, fv_hu_moments])
+        global_features = np.array(global_features_string)
+        global_labels = np.array(global_labels_string)
 
-            features_data.append(global_feature)
-            labels.append(category_idx)
+        ordered_categories = sorted(self.categories)
+        # print(self.categories)
+        print(f"Ordered categories: {[(category, label) for label, category in enumerate(ordered_categories)]}")
 
-    data = np.asarray(features_data)
-    labels = np.asarray(labels)
+        h5f_data.close()
+        h5f_label.close()
 
-    print(data.shape, labels.shape)
+        label, count = np.unique(global_labels, return_counts=True)
 
-    rescaled_features = scaler.fit_transform(data)
+        data_ids = np.arange(0, global_features.shape[0])
 
-    # save the feature vector using HDF5
-    h5f_data = h5py.File(f_data, 'w')
-    h5f_data.create_dataset(dataset_name, data=np.array(rescaled_features))
+        print(f"From dataset file {self.dataset_name} loaded:")
 
-    h5f_label = h5py.File(f_label, 'w')
-    h5f_label.create_dataset(dataset_name, data=labels)
+        ordered_labels = []
+        for l, i in zip(global_labels, data_ids):
+            print(l, i, self.categories[l], ordered_categories.index(self.categories[l]))
+            ordered_labels.append(ordered_categories.index(self.categories[l]))
 
-    h5f_data.close()
-    h5f_label.close()
+        # print(global_labels)
+        # print(ordered_labels)
+        global_labels = np.array(ordered_labels)
+        self.categories = ordered_categories
 
+        for label_id, label_count in zip(label, count):
+            print(f"{self.categories[label_id]}:\t{label_count}\t{round(label_count / len(global_labels) * 100, 2)}%")
 
-def hog_dataset(data_directory, data_categories, out_hog, data_name, size=1024):
-    images = []
-    for category_idx, category in enumerate(data_categories):
-        for i, file in enumerate(os.listdir(os.path.join(data_directory, category))):
-            img_path = os.path.join(data_directory, category, file)
-            img = cv2.imread(img_path, cv2.IMREAD_GRAYSCALE)
+        (trainDataGlobal, testDataGlobal,
+         trainLabelsGlobal, testLabelsGlobal) = train_test_split(np.array(global_features),
+                                                          np.array(global_labels),
+                                                          test_size=self.test_size,
+                                                          random_state=self.seed,
+                                                          stratify=np.array(
+                                                              global_labels))
 
-            print(i, file, category, img.shape)
-            small_img = resize(img, (size, size))
+        self.data["test"]["X"] = testDataGlobal
+        self.data["test"]["Y"] = testLabelsGlobal
 
-            images.append(small_img)
+        print("[STATUS] splitted train and test data...")
+        print("Train data  : {}".format(trainDataGlobal.shape))
+        print("Test data   : {}".format(testDataGlobal.shape))
+        print("Train labels: {}".format(trainLabelsGlobal.shape))
+        print("Test labels : {}".format(testLabelsGlobal.shape))
 
-    images = np.asarray(images)
-    print(images.shape)
-    hog_images = hogify.fit_transform(images)
-    print(hog_images.shape)
+        train_label_counts = Counter(trainLabelsGlobal)
+        train_label_ids = np.arange(0, len(trainLabelsGlobal))
 
-    f_hog = f"{datasets_directory}/{out_hog}"
-    h5f_hog = h5py.File(f_hog, 'w')
-    h5f_hog.create_dataset(data_name, data=hog_images)
-
-    h5f_hog.close()
-
-
-def read_h5(in_feature, in_label, in_image, in_hog, data_name):
-    f_data, f_image = f"{datasets_directory}/{in_feature}", f"{datasets_directory}/{in_image}"
-    f_label, f_hog = f"{datasets_directory}/{in_label}", f"{datasets_directory}/{in_hog}"
-
-    h5f_data = h5py.File(f_data, 'r')
-    h5f_label = h5py.File(f_label, 'r')
-    h5f_image = h5py.File(f_image, 'r')
-    h5f_hog = h5py.File(f_hog, 'r')
-
-    global_features_string = h5f_data[data_name]
-    global_labels_string = h5f_label[data_name]
-    global_image_string = h5f_image[data_name]
-    global_hog_string = h5f_hog[data_name]
-
-    global_features = np.array(global_features_string)
-    global_labels = np.array(global_labels_string)
-
-    global_images = np.array(global_image_string)
-    global_images = np.reshape(global_images, (global_images.shape[0], w, h))
-
-    global_hogs = np.array(global_hog_string)
-    # global_hogs = np.reshape(global_hogs, (global_hogs.shape[0], 300, 300))
-
-    h5f_data.close()
-    h5f_label.close()
-    h5f_image.close()
-    h5f_hog.close()
-
-    return global_features, global_labels, global_images, global_hogs
-
-
-def read_train_h5(in_feature, in_label, data_name):
-    f_data, f_label = f"{datasets_directory}/{in_feature}", f"{datasets_directory}/{in_label}"
-
-    h5f_data = h5py.File(f_data, 'r')
-    h5f_label = h5py.File(f_label, 'r')
-
-    global_features_string = h5f_data[data_name]
-    global_labels_string = h5f_label[data_name]
-
-    global_features = np.array(global_features_string)
-    global_labels = np.array(global_labels_string)
+        to_be_removed = []
+        for label, counts in train_label_counts.items():
+            if counts > self.upper_category_limit:
+                print(label, "oversized")
+                category_ids = []
+                for i in train_label_ids:
+                    if trainLabelsGlobal[i] == label:
+                        category_ids.append(i)
+                print(f"Found {len(category_ids)} IDs")
+                # random.shuffle(category_ids)
+                # new_category_ids = category_ids[:self.upper_category_limit]
+                cropped_category_ids = category_ids[self.upper_category_limit:]
 
-    h5f_data.close()
-    h5f_label.close()
+                print(f"{len(cropped_category_ids)} samples of {label} will be removed")
 
-    label, count = np.unique(global_labels, return_counts=True)
-    for label_id, label_count in zip(label, count):
-        print(f"{categories[label_id]}:\t{label_count}\t{round(label_count/len(global_labels)*100, 2)}%")
+                to_be_removed += cropped_category_ids
 
-    return global_features, global_labels
+        print(f"Removing a total of {len(to_be_removed)} samples from oversized categories")
 
+        trainDataGlobal = np.delete(trainDataGlobal, to_be_removed, 0)
+        trainLabelsGlobal = np.delete(trainLabelsGlobal, to_be_removed, 0)
 
-def models_train(X, Y):
-    # create all the machine learning models
-    models = []
-    models.append(('LR', LogisticRegression(random_state=seed)))
-    models.append(('LDA', LinearDiscriminantAnalysis()))
-    models.append(('KNN', KNeighborsClassifier()))
-    models.append(('CART', DecisionTreeClassifier(random_state=seed)))
-    models.append(('RF', RandomForestClassifier(n_estimators=num_trees, random_state=seed)))
-    models.append(('NB', GaussianNB()))
-    models.append(('SVM', SGDClassifier(random_state=seed)))
-    models.append(('SGD', SVC(random_state=seed)))
+        # for i in to_be_removed:
+        #     del trainDataGlobal[i]
+        #     del trainLabelsGlobal[i]
 
-    # variables to hold the results and names
-    results = []
-    names = []
+        self.data["train"]["X"] = trainDataGlobal
+        self.data["train"]["Y"] = trainLabelsGlobal
 
-    # split the training and testing data
-    (trainDataGlobal, testDataGlobal, trainLabelsGlobal, testLabelsGlobal) = train_test_split(np.array(X),
-                                                                                              np.array(Y),
-                                                                                              test_size=test_size,
-                                                                                              random_state=seed,
-                                                                                              stratify=np.array(Y))
 
-    print("[STATUS] splitted train and test data...")
-    print("Train data  : {}".format(trainDataGlobal.shape))
-    print("Test data   : {}".format(testDataGlobal.shape))
-    print("Train labels: {}".format(trainLabelsGlobal.shape))
-    print("Test labels : {}".format(testLabelsGlobal.shape))
 
-    # 10-fold cross validation
-    for name, model in models:
-        kfold = KFold(n_splits=10, random_state=seed, shuffle=True)
-        cv_results = cross_val_score(model, trainDataGlobal, trainLabelsGlobal, cv=kfold, scoring="accuracy")
-        results.append(cv_results)
-        names.append(name)
-        msg = "%s: %f (%f)" % (name, cv_results.mean(), cv_results.std())
-        print(msg)
 
-    # boxplot algorithm comparison
-    fig = plt.figure()
-    fig.suptitle('Machine Learning algorithm comparison')
-    ax = fig.add_subplot(111)
-    plt.boxplot(results)
-    ax.set_xticklabels(names)
-    plt.show()
 
+class RFC:
+    def __init__(self, dataset: DataWrapper, base_path: str, max_category_samples: int,
+                 tree_N: int, weight_opt: str, top_N: int, out: str = None):
+        self.model_dir = f"{base_path}/model"
+        self.data_dir = f"{base_path}/dataset"
+        self.upper_category_limit = max_category_samples
+        self.weighted_classes = weight_opt
+        self.top_N = top_N
 
-def RFC_train(X,  Y, output_file):
-    # create the model - Random Forests
-    clf = RandomForestClassifier(n_estimators=num_trees, random_state=seed)
+        self.N_trees = tree_N
+        self.seed = 42
 
-    # split the training and testing data
-    (trainDataGlobal, testDataGlobal, trainLabelsGlobal, testLabelsGlobal) = train_test_split(np.array(X),
-                                                                                              np.array(Y),
-                                                                                              test_size=test_size,
-                                                                                              random_state=seed,
-                                                                                              stratify=np.array(Y))
+        self.model_name = f"model_{dataset.folder_abbr}_{self.weighted_classes[0]}_{self.upper_category_limit}c_{self.N_trees}t.pkl"
 
-    print("[STATUS] splitted train and test data...")
-    print("Train data  : {}".format(trainDataGlobal.shape))
-    print("Test data   : {}".format(testDataGlobal.shape))
-    print("Train labels: {}".format(trainLabelsGlobal.shape))
-    # label, count = np.unique(trainLabelsGlobal, return_counts=True)
-    # for label_id, label_count in zip(label, count):
-    #     print(f"{categories[label_id]}:\t{label_count}\t{round(label_count / len(trainLabelsGlobal) * 100, 2)}%")
-    print("Test labels : {}".format(testLabelsGlobal.shape))
-    # label, count = np.unique(testLabelsGlobal, return_counts=True)
-    # for label_id, label_count in zip(label, count):
-    #     print(f"{categories[label_id]}:\t{label_count}\t{round(label_count / len(testLabelsGlobal) * 100, 2)}%")
+        # self.categories = sorted(os.listdir(self.page_dir))
+        self.categories = dataset.categories
+        self.label_priority = dataset.label_priority
+        self.label_general = dataset.label_general
+        self.general_categories = dataset.general_categories
+        self.page_dir = dataset.page_dir
 
-    # fit the training data to the model
-    clf.fit(trainDataGlobal, trainLabelsGlobal)
+        print(f"Category input directories found: {self.categories}")
 
-    # save
-    with open(output_file, 'wb') as f:
-        pickle.dump(clf, f)
+        self.model = None
+        self.scaler = MinMaxScaler(feature_range=(0, 1))
 
-    print(f"Model saved to {output_file}")
+        self.data_train = dataset.data["train"]
+        self.data_test = dataset.data["test"]
 
-    # load
-    with open(output_file, 'rb') as f:
-        clf2 = pickle.load(f)
+        self.output_dir = "results" if out is None else out
 
-    acc = clf2.score(testDataGlobal, testLabelsGlobal)
-    print(f"Model accuracy:\t{round(acc*100, 2)}%")
 
 
+    def train(self, force: bool):
+        model_file = f"{self.model_dir}/{self.model_name}"
 
+        if Path(model_file).is_file() and not force:
+            print(f"RFC model with current parameters already exists")
+        else:
+            print(f"Training RFC of {self.N_trees} trees")
+            print(f"Category weights:", {self.categories[k]: v for k, v in self.label_priority.items()})
 
-def RFC_test(X, Y, model_file, data_labels):
-    with open(model_file, 'rb') as f:
-        clf = pickle.load(f)
+            print(f"{self.weighted_classes} weights applied")
 
-    print(f"Model loaded from {model_file}")
+            label_counts = Counter(self.data_train["Y"])
+            label_counts = {k.item() : v for k,v in label_counts.items()}
+            total_samples = self.data_train["Y"].shape[0]
 
-    # split the training and testing data
-    (trainDataGlobal, testDataGlobal, trainLabelsGlobal, testLabelsGlobal) = train_test_split(np.array(X),
-                                                                                              np.array(Y),
-                                                                                              test_size=test_size,
-                                                                                              random_state=seed,
-                                                                                              stratify=np.array(Y))
+            print(label_counts)
+            print(total_samples)
 
-    print("[STATUS] splitted train and test data...")
-    print("Train data  : {}".format(trainDataGlobal.shape))
-    print("Test data   : {}".format(testDataGlobal.shape))
-    print("Train labels: {}".format(trainLabelsGlobal.shape))
-    print("Test labels : {}".format(testLabelsGlobal.shape))
+            if self.weighted_classes == "no":
+                clf = RandomForestClassifier(n_estimators=self.N_trees, random_state=self.seed)
+            elif self.weighted_classes == "balance":
+                category_size_weights = {
+                    cat: total_samples / (len(self.categories) * min(self.upper_category_limit, cat_size)) for
+                    cat, cat_size in label_counts.items()}
+                print({self.categories[k] : v for k, v in category_size_weights.items()}, "weights")
+                clf = RandomForestClassifier(n_estimators=self.N_trees, random_state=self.seed, class_weight="balanced")
+            elif self.weighted_classes == "priority":
+                reverse_proir = {k: 1/v for k, v in self.label_priority.items()}
+                print({self.categories[k] : v for k, v in reverse_proir.items()}, "weights")
+                clf = RandomForestClassifier(n_estimators=self.N_trees, random_state=self.seed, class_weight=reverse_proir)
+            elif self.weighted_classes == "size-prior":
+                category_size_weights = {self.categories.index(cat): total_samples / (len(self.categories) * min(self.upper_category_limit, cat_size))
+                         - self.label_priority[self.categories.index(cat)] / 10 for cat, cat_size in label_counts.items()}
+                print({self.categories[k] : v for k, v in category_size_weights.items()}, "weights")
+                clf = RandomForestClassifier(n_estimators=self.N_trees, random_state=self.seed, class_weight=category_size_weights)
 
-    testLabelPrediction = clf.predict(testDataGlobal)
+            clf.fit(self.data_train["X"], self.data_train["Y"])
 
-    # cmx_svm = confusion_matrix(testLabelsGlobal, testLabelPrediction)
-    # plot_confusion_matrix(cmx_svm, vmax1=225, vmax2=100, vmax3=12)
+            with open(model_file, 'wb') as f:
+                pickle.dump(clf, f)
+            print(f"Model saved to {self.model_name}")
 
-    # disp = ConfusionMatrixDisplay(confusion_matrix=cmx_svm, display_labels=np.array(data_labels))
-    print('Percentage correct: ', round(100 * np.sum(testLabelPrediction == testLabelsGlobal) / len(testLabelsGlobal), 2))
+        # load
+        with open(model_file, 'rb') as f:
+            self.model = pickle.load(f)
 
-    disp = ConfusionMatrixDisplay.from_predictions(testLabelsGlobal, testLabelPrediction,
-                                                   normalize="true", display_labels=np.array(data_labels))
+        # fast eval
+        acc = self.model.score(self.data_test["X"], self.data_test["Y"])
+        print(f"Model accuracy:\t{round(acc * 100, 2)}%")
 
-    # disp.plot()
-    plt.show()
-    plt.savefig(f'conf_{upper_category_limit}.png', bbox_inches='tight')
 
+    def top_N_prediction(self, data_array: np.array, N: int):
+        pred_scores = self.model.predict_proba(data_array)
+        best_n = np.argsort(pred_scores, axis=1)[:, -N:]
+        best_n_scores = np.sort(pred_scores, axis=1)[:, -N:]
 
+        row_sums = best_n_scores.sum(axis=1)
+        best_n_scores_normal = best_n_scores / row_sums[:, np.newaxis]
 
+        return best_n_scores_normal, best_n, pred_scores
 
+    def test(self, input_dir: str):
+        if self.model is None:
+            # load
+            with open(f"{self.model_dir}/{self.model_name}", 'rb') as f:
+                self.model = pickle.load(f)
 
-hogify = HogTransformer(
-    pixels_per_cell=(20, 20),
-    cells_per_block=(2, 2),
-    orientations=9,
-    block_norm='L2-Hys'
-)
-scalify = StandardScaler()
+            print(f"Model loaded from {self.model_name}")
 
-# process_directory_to_dataset(input_dir, categories, h5_data, h5_images, h5_labels, dataset_name)
-# hog_dataset(input_dir, categories, h5_hog, dataset_name)
+        plot_image = f'conf_{self.top_N}n_{self.weighted_classes[0]}_{self.upper_category_limit}c_{self.N_trees}t.png'
+        gen_plot_image = "gen_" + plot_image
 
-process_dir_to_dataset(input_dir, categories, h5_data, h5_labels, dataset_name)
-# hog_dataset(input_dir, categories, h5_hog, dataset_name)
+        predictions = self.model.predict(self.data_test["X"])
+        best_n_scores_normal, best_n, raw = self.top_N_prediction(self.data_test["X"], self.top_N)
 
-features, labels = read_train_h5(h5_data, h5_labels, dataset_name)
-print(features.shape, labels.shape)
+        test_df = pd.DataFrame(best_n, columns=[f"top-{i+1}" for i in range(self.top_N)])
 
-model_out = f"{models_directory}/{model_name}"
+        test_df[[f"score-{i+1}" for i in range(self.top_N)]] = best_n_scores_normal
+        for i in range(self.top_N):
+            test_df[f"pred-{i+1}"] = test_df[f"top-{i+1}"].apply(lambda x: self.categories[x])
 
-RFC_train(features, labels, model_out)
+        test_df["true"] = self.data_test["Y"]
+        test_df["true_cat"] = test_df["true"].apply(lambda x: self.categories[x])
 
-RFC_test(features, labels, model_out, categories)
+        print(test_df)
 
-# models_train(features, labels)
+        test_df.to_csv(f'{self.output_dir}/tables/result_{self.top_N}n_{self.weighted_classes[0]}_{self.upper_category_limit}c_{self.N_trees}t.csv',
+                       index=False, sep=",")
 
+        print('Percentage correct: ',
+              round(100 * np.sum(predictions == self.data_test["Y"]) / len(self.data_test["Y"]), 2))
+        #
+        # disp = ConfusionMatrixDisplay.from_predictions(self.data_test["Y"], predictions,
+        #                                                normalize="true", display_labels=np.array(self.categories))
+        #
+        # print(f"\t{' '.join(disp.display_labels)}")
+        # for ir, row in enumerate(disp.confusion_matrix):
+        #     print(f"{disp.display_labels[ir]}\t{'   '.join([str(val) if val > 0 else ' -- ' for val in np.round(row, 2)])}")
+        #
 
-# features, labels, images, hogs = read_h5(h5_data, h5_labels, h5_images, h5_hog, dataset_name)
-# print(features.shape, labels.shape, images.shape, hogs.shape)
+        # Calculate the percentage correct for top-N predictions
+        correct_count = sum(true_label in best_n[i] for i, true_label in enumerate(self.data_test["Y"]))
+        percentage_correct = 100 * correct_count / len(self.data_test["Y"])
 
+        print(f'Percentage correct (top-{self.top_N}): ', round(percentage_correct, 2))
+
+        correct_index = []
+        for i, true_label in enumerate(self.data_test["Y"]):
+            best_n_i = best_n[i]
+
+            sample_rec = False
+            for g in range(self.top_N):
+                if best_n_i[g] == true_label:
+                    correct_index.append(g)
+                    sample_rec = True
+            if not sample_rec:
+                correct_index.append(np.argmax(best_n_i))
+
+        # correct_index = [self.data_test["Y"][i] in best_n[i] for i in range(len(self.data_test["Y"]))]
+        # print(best_n)
+
+        # Flatten best_n predictions for confusion matrix
+        predictions = np.array(
+            [best_n[i, correct_index[i]] for i in range(best_n.shape[0])])  # Using the top prediction for confusion matrix
+
+        # Confusion matrix display and normalized output
+        disp = ConfusionMatrixDisplay.from_predictions(
+            self.data_test["Y"], predictions,
+            normalize="true", display_labels=np.array(self.categories)
+        )
+
+        print(f"\t{' '.join(disp.display_labels)}")
+        for ir, row in enumerate(disp.confusion_matrix):
+            print(
+                f"{disp.display_labels[ir]}\t{'   '.join([str(val) if val > 0 else ' -- ' for val in np.round(row, 2)])}")
+
+        disp.ax_.set_title(f"TOP {self.top_N} {self.weighted_classes[0]} {self.upper_category_limit}c {self.N_trees}t  Full CM folder: {input_dir}")
+        plt.savefig(f"{self.output_dir}/plots/{plot_image}", bbox_inches='tight')
+        plt.close()
+
+
+        general_prediction = np.array([self.general_categories.index(self.label_general[l]) for l in predictions])
+        gegeral_truth = np.array([self.general_categories.index(self.label_general[l]) for l in self.data_test["Y"]])
+
+        print(f'General percentage correct (Top-{self.top_N}): ', round(100 * np.sum(general_prediction == gegeral_truth) / len(gegeral_truth), 2))
+
+        disp_gen = ConfusionMatrixDisplay.from_predictions(gegeral_truth, general_prediction,
+                                                       normalize="true", display_labels=np.array(self.general_categories))
+
+        print(f"\t{' '.join(disp_gen.display_labels)}")
+        for ir, row in enumerate(disp_gen.confusion_matrix):
+            print(f"{disp_gen.display_labels[ir]}\t{'   '.join([str(val) if val > 0 else ' -- ' for val in np.round(row, 2)])}")
+
+        disp_gen.ax_.set_title(f"TOP {self.top_N} {self.weighted_classes[0]} {self.upper_category_limit}c {self.N_trees}t  General CM folder: {input_dir}")
+        plt.savefig(f"{self.output_dir}/plots/{gen_plot_image}", bbox_inches='tight')
+        plt.close()
+
+    def predict_single(self, image_file: str, N: int = None):
+        if self.model is None:
+            # load
+            with open(f"{self.model_dir}/{self.model_name}", 'rb') as f:
+                self.model = pickle.load(f)
+
+            print(f"Model loaded from {self.model_name}")
+
+        feature = img_to_feature(image_file)
+
+        category_distrib = self.model.predict_proba(feature.reshape(1, -1))[self.top_N if N is None else N]
+        return category_distrib, self.categories[np.argmax(category_distrib)]
+
+    def predict_directory(self, folder_path: str, n: int, out_table: str = None, raw: bool = False):
+        if self.model is None:
+            # load
+            with open(f"{self.model_dir}/{self.model_name}", 'rb') as f:
+                self.model = pickle.load(f)
+
+            print(f"Model loaded from {self.model_name}")
+
+        images = directory_scraper(Path(folder_path), "png")
+        data_features, data_ids = [], []
+
+        random.shuffle(images)
+        images = images[:n]
+
+        print(f"Predicting {n} images from {folder_path}")
+
+        for image_file in images:
+            img_path = os.path.join(folder_path, image_file)
+            feature = img_to_feature(img_path)
+            data_features.append(feature)
+            data_ids.append(Path(img_path).stem)
+
+        print(f"Predicting {len(data_features)} images with {self.top_N} guesses")
+
+        best_n_scores_normal, best_n, raw_scores = self.top_N_prediction(data_features, self.top_N)
+
+        res_table = []
+        for i, image_f in images:
+            categ_labels = [self.categories[c] for c in best_n[i]]
+            categ_scores = np.round(best_n_scores_normal[i], 3)
+            image_filename = data_ids[i].replace("_", "-")
+            image_filename = image_filename.replace("-page-", "-")
+            img_file, img_page = image_filename.split("-")
+            res_table.append([img_file, img_page, categ_labels, categ_scores])
+
+        # categories = np.argmax(category_distrib, axis=1)
+        # labels = [self.categories[c] for c in categories]
+
+        if out_table is not None:
+            columns = ["FILE", "PAGE"]
+            for i in range(self.top_N):
+                columns.append(f"CLASS-{i+1}")
+            for i in range(self.top_N):
+                columns.append(f"SCORE-{i+1}")
+
+            df = pd.DataFrame(res_table, columns=columns)
+
+            print(df)
+
+            df.to_csv(out_table, sep=",", index=False)
+
+            if raw:
+                raw_df = pd.DataFrame(raw_scores, columns=self.categories)
+
+                raw_df["FILE"] = [d.split("-")[0] for d in data_ids]
+                raw_df["PAGE"] = [d.split("-")[1] for d in data_ids]
+
+                print(raw_df)
+
+                raw_df.to_csv(
+                    f'{self.output_dir}/tables/raw_result_{self.top_N}n_{self.weighted_classes[0]}_{self.upper_category_limit}c_{self.N_trees}t.csv',
+                    index=False, sep=",")
+
+        # if rename:
+        #     for image_name, image_label in zip(data_ids, labels):
+        #         original = f"{folder_path}/{image_name}.png"
+        #
+        #         short_label = image_label[0]
+        #         if "_" in image_label:
+        #             short_label += image_label[image_label.index("_")+1]
+        #
+        #         new_name = f"{folder_path}/{short_label}_{image_name}.png"
+        #
+        #         os.rename(original, new_name)
+
+        # return best_n, [self.categories[c] for c in categories]
