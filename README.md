@@ -5,6 +5,31 @@ Random Forest Classifier training and evaluation using confusing matrices,
 input file/directory processing, class (category) results of top N predictions output 
 and summarizing into a tabular format 
 
+
+**Categories:**
+
+DRAW:	**782**	7.86% - drawings, maps, paintings 
+
+DRAW_L:	**731**	7.35% - drawings, maps, paintings inside tabular layout
+
+LINE_HW:	**813**	8.18% - hndwritten text lines inside tabular layout
+
+LINE_P:	**691**	6.95% - printed text lines inside tabular layout
+
+LINE_T:	**1182**	11.89% - typed text lines inside tabular layout
+
+PHOTO:	**853**	8.58% - photos with text
+
+PHOTO_L:	**603**	6.06% - photos inside tabular layout
+
+TEXT:	**1015**	10.21% - mixed types, printed, and handwritten texts
+
+TEXT_HW:	**1332**	13.4% - handwritten text
+
+TEXT_P:	**596**	5.99% - printed text
+
+TEXT_T:	**1346**	13.54% - typed text
+
 **How to run:**
 
 Open [.env](.env) environment file where all output folder paths are defined - please change all of them
@@ -53,23 +78,23 @@ For the training and testing mode:
 
 **2.1**     After the dataset is compiled, category samples are split into training and testing sets according to the classes ratio, and max number of class samples provided 
 
-**2.2**     The Random Forest Classifier is trained (and saved to h5 file) on the training set and the Top-1 accuracy is calculated on the testing set
+**2.2**     The Random Forest Classifier is trained (and saved to pkl file) on the training set and the Top-1 accuracy is calculated on the testing set
 
 **2.3**     For the test set, the confusion matrix is calculated and saved to the output folder 
 
 **2.4**     For the test set predictions, the generalized labels are assigned and plotted on the confusion matrix that is also saved to the output folder 
 
-**2.5**     The Top-N predictions, including class labels,normalized scores, and golden label are saved to the output folder in tabular format
+**2.5**     The Top-N predictions, including class labels, normalized scores, certainty measure, and golden label are saved to the output folder in tabular format
 
 For the inference mode:
 
-**3.1**     The model is loaded from the h5 file 
+**3.1**     The model is loaded from the pkl file 
 
 **3.2**     For the single input file or collection scraped from the input directory features are extracted 
 
 **3.3**     The features are sent to the model for prediction, raw class scores obtained
 
-**3.4**     The Top-N predictions, including class labels,normalized scores, and filename info are saved to the output folder in tabular format
+**3.4**     The Top-N predictions, including class labels, normalized scores, certainty measure, and filename info are saved to the output folder in tabular format
 
 **Note!** it will take some time for OpenCV and mahotas to process all pages from the directory
 

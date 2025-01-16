@@ -1,26 +1,21 @@
 import argparse
-import os
 from dotenv import load_dotenv
-from pathlib import Path
-import json
-import pandas as pd
-
 from classifier import *
 
 
 if __name__ == "__main__":
-    base_dir = "/lnet/work/people/lutsai/pythonProject"
+    base_dir = "/lnet/work/people/lutsai/pythonProject/OCR/ltp-ocr/rfc-sort"
 
     top_N = 3
-    trees = 100
+    trees = 333
 
     max_categ = 1350
 
-    input_dir = f'pages/train_{"final" if max_categ % 50 == 0 else "balanced"}'
+    # data_dir = f'pages/train_{"final" if max_categ % 50 == 0 else "balanced"}'
 
-    large_dataset = f"{base_dir}/dataset/data_tf_1350c.h5" if max_categ % 100 == 0 else f"{base_dir}/dataset/data_tb_1301c.h5"
-    large_dataset_labels = f"{base_dir}/dataset/labels_tf_1350c.h5" if max_categ % 100 == 0 else f"{base_dir}/dataset/labels_tb_1301c.h5"
-    large_dataset_name = "dataset_1350c" if max_categ % 100 == 0 else "dataset_1301c"
+    large_dataset = f"{base_dir}/dataset/data_tf_1350c.h5" if max_categ % 50 == 0 else f"{base_dir}/dataset/data_tb_1301c.h5"
+    large_dataset_labels = f"{base_dir}/dataset/labels_tf_1350c.h5" if max_categ % 50 == 0 else f"{base_dir}/dataset/labels_tb_1301c.h5"
+    large_dataset_name = "dataset_1350c" if max_categ % 50 == 0 else "dataset_1301c"
 
     # weighting scheme for the Random Forest classifier
     w_class = 0
@@ -44,11 +39,11 @@ if __name__ == "__main__":
 
     force = False  # training
 
-    test_dir = 'test_pages'
-    test_file = "MTX202210023c_page_21.png"
+    test_dir = 'testing'
+    test_file = "T_MTX195602489-12.png"
 
     parser = argparse.ArgumentParser(description='Page sorter based on RFC')
-    parser.add_argument('-f', "--file", type=str, default=test_file, help="Single PNG page path")
+    parser.add_argument('-f', "--file", type=str, default=None, help="Single PNG page path")
     parser.add_argument('-d', "--directory", type=str, default=None, help="Path to folder with PNG pages")
     parser.add_argument('-tn', "--topn", type=int, default=top_N, help="Number of top result categories to consider")
     parser.add_argument('-w', "--weight", type=int, default=w_class, help='By index from "balance"(D), "size-prior", "priority", and "no" options')
@@ -63,16 +58,20 @@ if __name__ == "__main__":
     cur = Path.cwd() #  directory with this script
     # locally creating new directory pathes instead of .env variables loaded with mistakes
     output_dir = Path(os.environ.get('FOLDER_RESULTS', cur / "results"))
-    page_images_folder = Path(os.environ.get('FOLDER_PAGES', cur / "pages"))
-    input_dir = Path(os.environ.get('FOLDER_INPUT', cur / test_dir)) if args.directory is None else Path(args.directory)
+    page_images_folder = Path(os.environ.get('FOLDER_PAGES', Path(base_dir) / "pages"))
+    input_dir = Path(os.environ.get('FOLDER_INPUT', page_images_folder / test_dir)) if args.directory is None else Path(args.directory)
 
-    Dataset = DataWrapper(base_dir,
-                          str(input_dir),
+    if not args.train:
+        data_dir = None
+
+    Dataset = DataWrapper(base_dir, data_dir,
                           max_categ,
                           category_map)
-    Dataset.process_page_directory()
-    Dataset.load_features_dataset()
-    # Dataset.load_features_dataset(large_dataset, large_dataset_labels, large_dataset_name)
+    if args.train:
+        Dataset.process_page_directory()
+        Dataset.load_features_dataset()
+    else:
+        Dataset.load_features_dataset(large_dataset, large_dataset_labels, large_dataset_name)
 
     RandomForest_classifier = RFC(Dataset,
                                   base_dir,
@@ -88,13 +87,14 @@ if __name__ == "__main__":
     # rfc_params = RandomForest_classifier.model.get_params()
     # print(rfc_params)
 
-    c, pred = RandomForest_classifier.predict_single(str(Path(cur / f"{test_dir}/{args.file}")))
-    print(RandomForest_classifier.categories)
-    print(c, pred)
+    if args.file is not None:
+        c, pred = RandomForest_classifier.predict_single(args.file)
+        print(RandomForest_classifier.categories)
+        print(c, pred)
 
     if args.dir:
         directory_result_output = str(
-            Path(cur / f'{output_dir}/tables/raw_result_{args.topn}n_{args.weight[0]}_{max_categ}c_{args.tree}t.csv'))
+            Path(cur / f'{output_dir}/tables/raw_result_{args.topn}n_{weight_options[args.weight][0]}_{max_categ}c_{args.tree}t.csv'))
         RandomForest_classifier.predict_directory(str(input_dir), raw=True, out_table=directory_result_output)
 
 

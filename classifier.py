@@ -102,7 +102,7 @@ def append_to_csv(df, filepath):
 
 class DataWrapper:
     def __init__(self, base_path: str, page_folder: str, max_category_samples: int, category_map: dict):
-        self.page_dir = f"{base_path}/{page_folder}"
+        self.page_dir = None
         self.data_dir = f"{base_path}/dataset"
         self.upper_category_limit = max_category_samples
 
@@ -112,13 +112,23 @@ class DataWrapper:
         suffix = f"{self.upper_category_limit}c"
         self.dataset_name = f"dataset_{suffix}"
 
-        self.folder_abbr = "".join([w[0] for w in page_folder.split("/")[1].split("_")])
+        if page_folder is not None:
+            self.page_dir = f"{base_path}/{page_folder}"
+
+            self.folder_abbr = "".join([w[0] for w in page_folder.split("/")[1].split("_")])
+
+            # self.categories = sorted(os.listdir(self.page_dir))
+            self.categories = os.listdir(self.page_dir)
+            print(f"Category input directories found: {self.categories}")
+        else:
+            self.categories =['DRAW', 'DRAW_L', 'LINE_HW', 'LINE_P', 'LINE_T', 'PHOTO', 'PHOTO_L', 'TEXT', 'TEXT_HW', 'TEXT_P', 'TEXT_T']
+            print(f"Category loaded from memory: {self.categories}")
+
+            self.folder_abbr = "tf"  # train final
+
         self.h5f_data = f'data_{self.folder_abbr}_{suffix}.h5'
         self.h5f_labels = f'labels_{self.folder_abbr}_{suffix}.h5'
 
-        # self.categories = sorted(os.listdir(self.page_dir))
-        self.categories = os.listdir(self.page_dir)
-        print(f"Category input directories found: {self.categories}")
 
         self.data = {
             "train": {
@@ -157,9 +167,13 @@ class DataWrapper:
             print(f"Dataset {self.dataset_name} has been already processed")
             return
         else:
+            if self.page_dir is None:
+                return
             print(f"{self.data_dir}/{self.h5f_data}", f"{self.data_dir}/{self.h5f_labels}")
 
         features_data, labels = [], []
+
+        random.seed(self.seed)
 
         for category_idx, category in enumerate(self.categories):
             all_category_files = os.listdir(os.path.join(self.page_dir, category))
@@ -222,11 +236,11 @@ class DataWrapper:
 
         data_ids = np.arange(0, global_features.shape[0])
 
-        print(f"From dataset file {self.dataset_name} loaded:")
+        print(f"From dataset file {self.dataset_name if data_name is None else data_name} loaded:")
 
         ordered_labels = []
         for l, i in zip(global_labels, data_ids):
-            print(l, i, self.categories[l], ordered_categories.index(self.categories[l]))
+            # print(l, i, self.categories[l], ordered_categories.index(self.categories[l]))
             ordered_labels.append(ordered_categories.index(self.categories[l]))
 
         # print(global_labels)
@@ -286,6 +300,12 @@ class DataWrapper:
         self.data["train"]["X"] = trainDataGlobal
         self.data["train"]["Y"] = trainLabelsGlobal
 
+        print("[STATUS] splitted train and test data...")
+        print("Train data  : {}".format(trainDataGlobal.shape))
+        print("Test data   : {}".format(testDataGlobal.shape))
+        print("Train labels: {}".format(trainLabelsGlobal.shape))
+        print("Test labels : {}".format(testLabelsGlobal.shape))
+
 
 
 
@@ -309,7 +329,6 @@ class RFC:
         self.label_priority = dataset.label_priority
         self.label_general = dataset.label_general
         self.general_categories = dataset.general_categories
-        self.page_dir = dataset.page_dir
 
         print(f"Category input directories found: {self.categories}")
 
@@ -382,7 +401,9 @@ class RFC:
         row_sums = best_n_scores.sum(axis=1)
         best_n_scores_normal = best_n_scores / row_sums[:, np.newaxis]
 
-        return best_n_scores_normal, best_n, pred_scores
+        score_var = np.var(best_n_scores_normal, axis=1)
+
+        return -np.sort(-best_n_scores_normal), best_n, pred_scores, np.round(score_var, 5)
 
     def test(self, input_dir: str):
         if self.model is None:
@@ -396,7 +417,7 @@ class RFC:
         gen_plot_image = "gen_" + plot_image
 
         predictions = self.model.predict(self.data_test["X"])
-        best_n_scores_normal, best_n, raw = self.top_N_prediction(self.data_test["X"], self.top_N)
+        best_n_scores_normal, best_n, raw, var = self.top_N_prediction(self.data_test["X"], self.top_N)
 
         test_df = pd.DataFrame(best_n, columns=[f"top-{i+1}" for i in range(self.top_N)])
 
@@ -407,9 +428,13 @@ class RFC:
         test_df["true"] = self.data_test["Y"]
         test_df["true_cat"] = test_df["true"].apply(lambda x: self.categories[x])
 
+        test_df.drop(columns=[f"top-{i+1}" for i in range(self.top_N)] + ["true"], inplace=True)
+
+        test_df["certain"] = var
+
         print(test_df)
 
-        test_df.to_csv(f'{self.output_dir}/tables/result_{self.top_N}n_{self.weighted_classes[0]}_{self.upper_category_limit}c_{self.N_trees}t.csv',
+        test_df.to_csv(f'{self.output_dir}/tables/test_{self.top_N}n_{self.weighted_classes[0]}_{self.upper_category_limit}c_{self.N_trees}t.csv',
                        index=False, sep=",")
 
         print('Percentage correct: ',
@@ -512,29 +537,34 @@ class RFC:
         for batch_start in range(0, len(images), batch_size):
             batch_images = images[batch_start:batch_start + batch_size]
 
-            with Pool(ncpu=mp.cpu_count()) as pool:
+            with Pool(ncpus=mp.cpu_count()) as pool:
                 results = pool.map(batch_process_images, [batch_images], [folder_path])
 
             for data_features, data_ids in results:
-                best_n_scores_normal, best_n, raw_scores = self.top_N_prediction(data_features, self.top_N)
+                best_n_scores_normal, best_n, raw_scores, vars = self.top_N_prediction(data_features, self.top_N)
 
                 for i, image_f in enumerate(batch_images):
                     categ_labels = [self.categories[c] for c in best_n[i]]
                     categ_scores = np.round(best_n_scores_normal[i], 3)
-                    image_filename = data_ids[i].replace("_", "-").replace("-page-", "-")
-                    img_file, img_page = image_filename.split("-")
-                    res_table.append([img_file, img_page, categ_labels, categ_scores])
+                    # image_filename = data_ids[i].replace("_", "-").replace("-page-", "-")
+                    img_file, img_page = data_ids[i].split("-")
+                    print(img_file, img_page)
+                    res_table.append([img_file, img_page] + categ_labels + categ_scores.tolist() + [vars[i]])
 
                     if raw:
                         raw_row = list(raw_scores[i]) + [img_file, img_page]
                         raw_table.append(raw_row)
 
+                # print(res_table)
+
                 # Append to top-N output
                 if out_table is not None:
                     columns = ["FILE", "PAGE"] + \
                               [f"CLASS-{i + 1}" for i in range(self.top_N)] + \
-                              [f"SCORE-{i + 1}" for i in range(self.top_N)]
+                              [f"SCORE-{i + 1}" for i in range(self.top_N)] + ["CERTAIN"]
                     top_n_df = pd.DataFrame(res_table, columns=columns)
+
+                    out_table = f'{self.output_dir}/tables/result_{self.top_N}n_{self.weighted_classes[0]}_{self.upper_category_limit}c_{self.N_trees}t.csv'
                     append_to_csv(top_n_df, out_table)
 
                 # Append to raw output
