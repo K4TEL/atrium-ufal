@@ -62,6 +62,7 @@ best directory processing setup
 
 In the priority-based weighting strategy, the following priorities are used:
 
+```
 category_map = {
     1: {
         "PHOTO": "PHOTO", "PHOTO_L"
@@ -76,6 +77,7 @@ category_map = {
         "TEXT": "TEXT", "TEXT_HW", "TEXT_P", "TEXT_T"
     }
 }
+```
 
 **Step-by-step workflow explanations:**
 
