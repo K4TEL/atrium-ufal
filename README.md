@@ -8,7 +8,7 @@ and summarizing into a tabular format
 
 **Categories:**
 
-DRAW:	**782**	7.86% - drawings, maps, paintings 
+DRAW:	**782**	7.86% - drawings, maps, paintings (big enough in comparison to other page content)
 
 DRAW_L:	**731**	7.35% - drawings, maps, paintings inside tabular layout
 
@@ -51,8 +51,7 @@ to parse all PNG files in the directory (+ its subdirectories) and classify all 
 
 The results of PNG pages classification will be saved to related folders 
 
-Tip: you can run the script in the second terminal window without ``-f`` flag to skip DD processing and run only 
-category prediction for already collected page layout stat files
+Other options for fast model training include tree number and class weight strategy changes:
 
     python3 run.py -tn 3 -t 333 -w 0 -f '/full/path/to/file'
 best file processing setup with 333 trees in the Random Forest Classifier, 
@@ -61,6 +60,22 @@ balanced (by size) class weights,
     python3 run.py -tn 3 -t 333 -w 0 --dir -d '/full/path/to/directory'
 best directory processing setup
 
+In the priority-based weighting strategy, the following priorities are used:
+
+category_map = {
+    1: {
+        "PHOTO": "PHOTO", "PHOTO_L"
+    },
+    2: {
+        "DRAW": "DRAW", "DRAW_L"
+    },
+    3: {
+        "LINE": "LINE_HW", "LINE_P", "LINE_T"
+    },
+    4: {
+        "TEXT": "TEXT", "TEXT_HW", "TEXT_P", "TEXT_T"
+    }
+}
 
 **Step-by-step workflow explanations:**
 
@@ -72,7 +87,7 @@ Single PNG processing steps:
 
 **1.3**      From the grayscale binary version of the initial image extracting the same features: HuMomemts, Haralick Texture, and Black-White portion descriptors 
 
-**1.4**      If it's a training mode, the features are saved to the h5 dataset, otherwise, the the features are sent to the model for prediction
+**1.4**      If it's a training mode, the features are saved to the h5 dataset, otherwise, the features are sent to the model for prediction
 
 For the training and testing mode:
 
@@ -92,7 +107,7 @@ For the inference mode:
 
 **3.2**     For the single input file or collection scraped from the input directory features are extracted 
 
-**3.3**     The features are sent to the model for prediction, raw class scores obtained
+**3.3**     The features are sent to the model for prediction, and raw class scores obtained
 
 **3.4**     The Top-N predictions, including class labels, normalized scores, certainty measure, and filename info are saved to the output folder in tabular format
 
@@ -104,7 +119,7 @@ Code of the main function in the starting point [run.py](run.py) file can be edi
 If [.env](.env) variables are not loaded - change filenames in the main function of [run.py](run.py)
 
 
-**TIP**     You can set up default values of _topn_, _file_ and _directory_ values in the main function of
+**TIP**     You can set up default values of _tree_, _topn_, _file_ and _directory_ values in the main function of
 [run.py](run.py) and then run the script via:
 
     python3 run.py --dir 
