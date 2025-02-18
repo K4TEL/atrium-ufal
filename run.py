@@ -1,178 +1,103 @@
 import argparse
-import os
-
-import configparser
+from dotenv import load_dotenv
 from classifier import *
 import time
 
 if __name__ == "__main__":
-    # Initialize the parser
-    config = configparser.ConfigParser()
-    # Read the configuration file
-    config.read('config.txt')
+    base_dir = "/lnet/work/people/lutsai/pythonProject/OCR/ltp-ocr/rfc-sort"
 
-    def_categ = ["DRAW", "DRAW_L", "LINE_HW", "LINE_P", "LINE_T", "PHOTO", "PHOTO_L", "TEXT", "TEXT_HW", "TEXT_P", "TEXT_T"]
+    top_N = 5
+    trees = 333
 
-    seed = config.getint('SETUP', 'seed')
-    batch = config.getint('SETUP', 'batch')  # depends on GPU/CPU capabilities
-    top_N = config.getint('SETUP', 'top_N')  # top N predictions, 3 is enough, 11 for "raw" scores (most scores are 0)
+    max_categ = 500
 
-    base_model = config.get('SETUP', 'base_model')  # do not change
+    data_dir = f'/lnet/work/people/lutsai/pythonProject/pages/train_{"final" if max_categ % 50 == 0 else "balanced"}'
 
-    Training = config.getboolean('TRAIN', 'Training')
-    Testing = config.getboolean('TRAIN', 'Testing')
-    HF = config.getboolean('HF', 'use_hf')
+    large_dataset = f"{base_dir}/dataset/data_tf_1350c.h5" if max_categ % 50 == 0 else f"{base_dir}/dataset/data_tb_1301c.h5"
+    large_dataset_labels = f"{base_dir}/dataset/labels_tf_1350c.h5" if max_categ % 50 == 0 else f"{base_dir}/dataset/labels_tb_1301c.h5"
+    large_dataset_name = "dataset_1350c" if max_categ % 50 == 0 else "dataset_1301c"
 
-    model_folder = "model_1119_3"  # change if needed
-    model_dir = config.get('OUTPUT', 'FOLDER_MODELS')
-     # change if needed
-    model_path = f"{model_dir}/{model_folder}"
+    # weighting scheme for the Random Forest classifier
+    w_class = 0
+    weight_options = ["balance", "size-prior", "priority", "no"]
 
-    test_dir = config.get('INPUT', 'FOLDER_INPUT')
+    # weighting priorities
+    category_map = {
+        1: {
+            "PHOTO": ["PHOTO", "PHOTO_L"]
+        },
+        2: {
+            "DRAW": ["DRAW", "DRAW_L"]
+        },
+        3: {
+            "LINE": ["LINE_HW", "LINE_P", "LINE_T"]
+        },
+        4: {
+            "TEXT": ["TEXT", "TEXT_HW", "TEXT_P", "TEXT_T"]
+        }
+    }
 
-    # cur = Path.cwd()  # directory with this script
-    cur = Path(__file__).resolve().parent  # directory with this script
-    output_dir = Path(config.get('OUTPUT', 'FOLDER_RESULTS'))
-    cp_dir = Path(config.get('OUTPUT', 'FOLDER_CPOINTS'))
+    force = False  # training
 
-    time_stamp = time.strftime("%Y%m%d-%H%M")  # for results files
+    test_dir = 'testing'
+    test_file = "T_MTX195602489-12.png"
 
-    parser = argparse.ArgumentParser(description='Page sorter based on ViT')
+    time_stamp = time.strftime("%Y%m%d-%H%M")
+
+    parser = argparse.ArgumentParser(description='Page sorter based on RFC')
     parser.add_argument('-f', "--file", type=str, default=None, help="Single PNG page path")
     parser.add_argument('-d', "--directory", type=str, default=None, help="Path to folder with PNG pages")
-    parser.add_argument('-m', "--model", type=str, default=model_path, help="Path to folder with model")
     parser.add_argument('-tn', "--topn", type=int, default=top_N, help="Number of top result categories to consider")
-    parser.add_argument("--dir", help="Process whole directory (if -d not used)", action="store_true")
-    parser.add_argument("--inner", help="Process subdirectories of the given directory as well (FALSE by default)", default=False, action="store_true")
-    parser.add_argument("--train", help="Training model", default=Training, action="store_true")
-    parser.add_argument("--eval", help="Evaluating model", default=Testing, action="store_true")
-    parser.add_argument("--hf", help="Use model and processor from the HuggingFace repository", default=HF, action="store_true")
+    parser.add_argument('-w', "--weight", type=int, default=w_class, help='By index from "balance"(D), "size-prior", "priority", and "no" options')
+    parser.add_argument('-t', "--tree", type=int, default=trees, help="Number of trees in the Random Forest classifier")
+    parser.add_argument("--dir", help="Process whole directory", action="store_true")
+    parser.add_argument("--train", help="Process PDF files into layouts", default=force, action="store_true")
 
     args = parser.parse_args()
 
-    input_dir = Path(test_dir) if args.directory is None else Path(args.directory)
-    Training = args.train
-    model_path = Path(args.model)
-    top_N = args.topn
+    load_dotenv()
 
-    # locally creating new directory paths instead of .env variables loaded with mistakes
-    if not output_dir.is_dir():
-        os.makedirs(output_dir)
+    cur = Path.cwd() #  directory with this script
+    # locally creating new directory pathes instead of .env variables loaded with mistakes
+    output_dir = Path(os.environ.get('FOLDER_RESULTS', cur / "results"))
+    page_images_folder = Path(os.environ.get('FOLDER_PAGES', Path(base_dir) / "pages"))
+    input_dir = Path(os.environ.get('FOLDER_INPUT', page_images_folder / test_dir)) if args.directory is None else Path(args.directory)
 
-        os.makedirs(f"{output_dir}/tables")
-        os.makedirs(f"{output_dir}/plots")
+    if not args.train:
+        data_dir = None
 
-    if not cp_dir.is_dir():
-        os.makedirs(cp_dir)
-
-    if not Path(model_dir).is_dir():
-        os.makedirs(model_dir)
-
-    if args.train or args.eval:
-        epochs = config.getint("TRAIN", "epochs")
-        max_categ = config.getint("TRAIN", "max_categ")  # max number of category samples
-        log_step = config.getint("TRAIN", "log_step")
-        test_size = config.getfloat("TRAIN", "test_size")
-
-        data_dir = config.get("TRAIN", "FOLDER_PAGES")
-
-        total_files, total_labels, categories = collect_images(data_dir, max_categ)
-
-        (trainfiles, testfiles,
-         trainLabels, testLabels) = train_test_split(total_files,
-                                                     np.array(total_labels),
-                                                     test_size=test_size,
-                                                     random_state=seed,
-                                                     stratify=np.array(total_labels))
-
-        # Initialize the classifier
-        classifier = ImageClassifier(checkpoint=base_model, num_labels=len(categories), store_dir=str(cp_dir))
-
-    else:
-        categories = def_categ
-        print(f"Category input directories found: {categories}")
-
-        # Initialize the classifier
-        classifier = ImageClassifier(checkpoint=base_model, num_labels=len(categories), store_dir=str(cp_dir))
-
+    Dataset = DataWrapper(base_dir, data_dir,
+                          max_categ,
+                          category_map)
     if args.train:
-        train_loader = classifier.process_images(trainfiles,
-                                                 trainLabels,
-                                                 batch,
-                                                 True)
-        eval_loader = classifier.process_images(testfiles,
-                                                testLabels,
-                                                batch,
-                                                False)
-
-        classifier.train_model(train_loader,
-                               eval_loader,
-                               output_dir="./model_output",
-                               num_epochs=epochs,
-                               logging_steps=log_step)
-
-    if args.hf:
-        # pushing to repo
-        # classifier.push_to_hub(str(model_path), config.get("HF", "repo_name"), False, config.get("HF", "token"))
-
-        # loading from repo
-        classifier.load_from_hub(config.get("HF", "repo_name"))
-
-        classifier.save_model(str(model_path))
-
+        Dataset.process_page_directory()
+        Dataset.load_features_dataset()
     else:
-        classifier.load_model(str(model_path))
+        Dataset.load_features_dataset(large_dataset, large_dataset_labels, large_dataset_name)
 
-    if args.eval:
-        eval_loader = classifier.process_images(testfiles,
-                                                testLabels,
-                                                batch,
-                                                False)
-        eval_predictions = classifier.infer_dataloader(eval_loader, top_N)
+    RandomForest_classifier = RFC(Dataset,
+                                  base_dir,
+                                  max_categ,
+                                  args.tree,
+                                  weight_options[args.weight],
+                                  args.topn,
+                                  str(output_dir))
 
-        test_labels = np.argmax(testLabels, axis=-1).tolist()
+    RandomForest_classifier.train(args.train)
+    RandomForest_classifier.test("final")
 
-        rdf = dataframe_results(testfiles,
-                                eval_predictions,
-                                categories,
-                                top_N)
-
-        rdf["TRUE"] = [categories[i] for i in test_labels]
-
-        rdf.to_csv(f"{output_dir}/tables/{time_stamp}_{model_folder}_TOP-{top_N}_EVAL.csv", sep=",", index=False)
-
-        confusion_plot(eval_predictions,
-                       test_labels,
-                       categories,
-                       top_N)
+    # rfc_params = RandomForest_classifier.model.get_params()
+    # print(rfc_params)
 
     if args.file is not None:
-        pred_scores = classifier.top_n_predictions(args.file, top_N)
+        c, pred = RandomForest_classifier.predict_single(args.file)
+        print(RandomForest_classifier.categories)
+        print(c, pred)
 
-        labels = [categories[i[0]] for i in pred_scores]
-        scores = [round(i[1], 3) for i in pred_scores]
+    if args.dir:
+        directory_result_output = str(
+            Path(cur / f'{output_dir}/tables/raw_result_{args.topn}n_{weight_options[args.weight][0]}_{max_categ}c_{args.tree}t.csv'))
+        RandomForest_classifier.predict_directory(str(input_dir), raw=True, out_table=directory_result_output, general=True)
 
-        print(f"File {args.file} predicted:")
-        for lab, sc in zip(labels, scores):
-            print(f"\t{lab}:  {round(sc * 100, 2)}%")
-
-    if args.dir or args.directory is not None:
-
-        if args.inner:
-            test_images = sorted(directory_scraper(Path(test_dir), "png"))
-        else:
-            test_images = sorted(os.listdir(test_dir))
-            test_images = [os.path.join(test_dir, img) for img in test_images]
-
-        test_loader = classifier.create_dataloader(test_images, batch)
-
-        test_predictions = classifier.infer_dataloader(test_loader, top_N)
-
-        rdf = dataframe_results(test_images,
-                                test_predictions,
-                                categories,
-                                top_N)
-
-        rdf.to_csv(f"{output_dir}/tables/{time_stamp}_{model_folder}_TOP-{top_N}.csv", sep=",", index=False)
 
 

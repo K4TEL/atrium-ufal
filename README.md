@@ -1,162 +1,116 @@
-# Image processing using ViT - for historical documents
+**Goal:** This project solves a task of page images classification
 
-### Goal: This project solves a task of page images classification
+**Scope:** Processing of images into features, h5 dataset compilation, 
+Random Forest Classifier training and evaluation using confusing matrices,
+input file/directory processing, class (category) results of top N predictions output 
+and summarizing into a tabular format 
 
-**Scope:** Processing of images, training and evaluation of ViT model,
-input file/directory processing, class (category) results of top
-N predictions output, predictions summarizing into a tabular format, 
-HF 😊 hub support for the model
 
-## Model description
+**Categories:**
 
-Fine-tuned model files can be found here:  [huggingface.co/k4tel/vit-historical-page](https://huggingface.co/k4tel/vit-historical-page) 🔗
+DRAW:	**782**	7.86% - drawings, maps, paintings 
 
-Base model repository: [huggingface.co/google/vit-base-patch16-224](https://huggingface.co/google/vit-base-patch16-224) 🔗
+DRAW_L:	**731**	7.35% - drawings, maps, paintings inside tabular layout
 
-### Data
+LINE_HW:	**813**	8.18% - hndwritten text lines inside tabular layout
 
-Training set of the model: **8950** images 
+LINE_P:	**691**	6.95% - printed text lines inside tabular layout
 
-#### Categories
+LINE_T:	**1182**	11.89% - typed text lines inside tabular layout
 
-- **DRAW 📈**:	1182	(11.89%)  - **drawings, maps, paintings with text**
+PHOTO:	**853**	8.58% - photos with text
 
-- **DRAW_L 📈📏**:	813	(8.17%)   - **drawings, maps, paintings with a table legend or inside tabular layout / forms**
+PHOTO_L:	**603**	6.06% - photos inside tabular layout
 
-- **LINE_HW ✏️📏**:	596	(5.99%)   - **handwritten text lines inside tabular layout / forms**
+TEXT:	**1015**	10.21% - mixed types, printed, and handwritten texts
 
-- **LINE_P 📏**:	603	(6.06%)   - **printed text lines inside tabular layout / forms**
+TEXT_HW:	**1332**	13.4% - handwritten text
 
-- **LINE_T 📏**:	1332	(13.39%)  - **machine typed text lines inside tabular layout / forms**
+TEXT_P:	**596**	5.99% - printed text
 
-- **PHOTO 🌄**:	1015	(10.21%)  - **photos with text**
+TEXT_T:	**1346**	13.54% - typed text
 
-- **PHOTO_L 🌄📏**:	782	(7.86%)   - **photos inside tabular layout / forms or with a tabular annotation**
+**How to run:**
 
-- **TEXT 📰**:	853	(8.58%)   - **mixed types of printed and handwritten texts** 
+Open [.env](.env) environment file where all output folder paths are defined - please change all of them
 
-- **TEXT_HW ✏️📄**:	732	(7.36%)   - **only handwritten text**
+Change paths to folders by replacing the beginnings of directory paths with your own **FULL** directory paths (to 
+existing or not directories)
 
-- **TEXT_P 📄**:	691	(6.95%)   - **only printed text**
-
-- **TEXT_T 📄**:	1346	(13.53%)  - **only machine typed text**
-
-Evaluation set (10% of the above stats) [20250209-1534_model_1119_3_EVAL.csv](result/tables/20250209-1534_model_1119_3_EVAL.csv) 🔗:	**995** images 
-
-### Results 📊
-
-Evaluation set's accuracy (**Top-3**):  **99.6%** 
-
-![TOP-3 confusion matrix](result%2Fplots%2F20250209-1526_conf_mat.png)
-
-Evaluation set's accuracy (**Top-1**):  **97.3%** 
-
-![TOP-1 confusion matrix](result%2Fplots%2F20250218-1523_conf_mat.png)
-
-⚠️ Regarding the model output, **Top-3** is enough to cover most of the images, 
-setting **Top-5** will help with a small number of difficult to classify samples.
-Finally, using **Top-11** option will give you a **raw version** of class scores returned by the model
-
-#### Result tables
-
-- Example of the manually ✍ **checked** results (small): [model_1119_3_TOP-5.csv](result%2Ftables%2Fmodel_1119_3_TOP-5.csv) 🔗
-
-- Example of the manually ✍ **checked** evaluation dataset results (TOP-3): [20250209-1534_model_1119_3_TOP-3_EVAL.csv](result%2Ftables%2F20250209-1534_model_1119_3_TOP-3_EVAL.csv) 🔗
-
-- Example of the manually ✍ **checked** evaluation dataset results (TOP-1): [20250218-1519_model_1119_3_TOP-1_EVAL.csv](result%2Ftables%2F20250218-1519_model_1119_3_TOP-1_EVAL.csv) 🔗
-
-- Example of the **unchecked with TRUE** values results: [20250210-2034_model_1119_3_TOP-3.csv](result%2Ftables%2F20250210-2034_model_1119_3_TOP-3.csv) 🔗
-
-#### Table columns
-
-- **FILE** - name of the file
-- **PAGE** - number of the page
-- **CLASS-N** - label of the category, guess TOP-N 
-- **SCORE-N** - score of the category, guess TOP-N
-
-and optionally:
- 
-- **TRUE** - actual label of the category
-
-## How to install 🔧 and run ▶️
-
-Open [config.txt](config.txt) 🔗 and change folder path in the \[INPUT\] section, then optionally change **top_N** and **batch** in the \[SETUP\] section.
-
-**😈 WARNING 😈**: do not try to change **base_model** and other section contents unless you know what you are doing
-
-There are few option to obtain the trained model files:
-
-- get a complete archive of the model folder from its developers ( Create a folder "**model**" next to this file, then place the model folder inside it)
-- get a model and processor from the [HF 😊 repo](https://huggingface.co/k4tel/vit-historical-page) 🔗 using a specific flag described below
-
-Make sure you have **Python version 3.10+** installed on your machine 💻.
-Then create a virtual environment for this project following the Linux/Windows-specific instruction at the [venv docs](https://docs.python.org/3/library/venv.html) 👀🔗
-
-**⚠️ NOTE ⚠️** up to **1 GB of space for model** files and checkpoints is needed, 
-and up to **7 GB of space for the python libraries** (pytorch and its dependencies, etc)
-
-After creating the venv folder, activate the environment via:
-
-    source <your_venv_dir>/bin/activate
-
-and then inside your virtual environment to install (takes time ⌛) the python libraries run:
+Use pip to install dependencies:
 
     pip install -r requirements.txt
 
-To test that everything works okay and see the flag descriptions ❓ run:
+Run the program from its starting point [run.py](run.py) with optional flags:
 
-    python3 run.py -h
+    python3 run.py -tn 3 -f '/full/path/to/file.png'
+to run single PNG file classification with top 3 predictions
 
-There is an option to **load the model from the HF 😊 hub directly**, rather than use the local model folder.
-To run any inference without locally saved model files, firstly load the model via:
+    python3 run.py -tn 3 --dir -d '/full/path/to/directory' 
+to parse all PNG files in the directory (+ its subdirectories) and classify all pages (RECOMMENDED)
 
-    python3 run.py --hf
+The results of PNG pages classification will be saved to related folders 
 
-You should see a message about loading the model from hub and then saving it locally. 
-Only after you obtain the trained model files, you can play with any commands provided below
+Tip: you can run the script in the second terminal window without ``-f`` flag to skip DD processing and run only 
+category prediction for already collected page layout stat files
 
-### Common command examples 
+    python3 run.py -tn 3 -t 333 -w 0 -f '/full/path/to/file'
+best file processing setup with 333 trees in the Random Forest Classifier, 
+balanced (by size) class weights, 
 
-Run the program from its starting point [run.py](run.py) 🔗 with optional flags:
-
-    python3 run.py -tn 3 -f '/full/path/to/file.png' -m '/full/path/to/model/folder'
-
-for exactly TOP-3 guesses - normalized scores for the highest 3 class scores
-
-**OR** if you are sure about default variables set in the [config.txt](config.txt) 🔗:
-
-    python3 run.py -f '/full/path/to/file.png'
+    python3 run.py -tn 3 -t 333 -w 0 --dir -d '/full/path/to/directory'
+best directory processing setup
 
 
-to run single PNG file classification - the output will be in the console. 
+**Step-by-step workflow explanations:**
 
-#### Directory processing 📁
+Single PNG processing steps:
 
-    python3 run.py -tn 3 --inner -d '/full/path/to/directory' -m '/full/path/to/model/folder'
+**1.1**     From the image extracting the following features: HuMomemts, Haralick Texture, and Color Histogram descriptors 
 
-for exactly TOP-3 guesses from all images found in the subdirectories of the given directory.
+**1.2**     The source image undergoes Otsu binarization
 
-**OR** if you are really sure about default variables set in the [config.txt](config.txt) 🔗:
+**1.3**      From the grayscale binary version of the initial image extracting the same features: HuMomemts, Haralick Texture, and Black-White portion descriptors 
+
+**1.4**      If it's a training mode, the features are saved to the h5 dataset, otherwise, the the features are sent to the model for prediction
+
+For the training and testing mode:
+
+**2.1**     After the dataset is compiled, category samples are split into training and testing sets according to the classes ratio, and max number of class samples provided 
+
+**2.2**     The Random Forest Classifier is trained (and saved to pkl file) on the training set and the Top-1 accuracy is calculated on the testing set
+
+**2.3**     For the test set, the confusion matrix is calculated and saved to the output folder 
+
+**2.4**     For the test set predictions, the generalized labels are assigned and plotted on the confusion matrix that is also saved to the output folder 
+
+**2.5**     The Top-N predictions, including class labels, normalized scores, certainty measure, and golden label are saved to the output folder in tabular format
+
+For the inference mode:
+
+**3.1**     The model is loaded from the pkl file 
+
+**3.2**     For the single input file or collection scraped from the input directory features are extracted 
+
+**3.3**     The features are sent to the model for prediction, raw class scores obtained
+
+**3.4**     The Top-N predictions, including class labels, normalized scores, certainty measure, and filename info are saved to the output folder in tabular format
+
+**Note!** it will take some time for OpenCV and mahotas to process all pages from the directory
+
+Code of the algorithms can be found in the [classifier.py](classifier.py) file:
+
+Code of the main function in the starting point [run.py](run.py) file can be edited. 
+If [.env](.env) variables are not loaded - change filenames in the main function of [run.py](run.py)
+
+
+**TIP**     You can set up default values of _topn_, _file_ and _directory_ values in the main function of
+[run.py](run.py) and then run the script via:
 
     python3 run.py --dir 
 
-to parse all PNG files in the directory (+ its subdirectories if use _--inner_) and classify all pages (**RECOMMENDED**)
-The results of those PNG pages classification will be saved 💾 to related folders defined in [config.txt](config.txt)'s \[OUTPUT\] section.
+which is for directory (and subdirectories) level processing
 
-## For devs
+    python3 run.py 
 
-To train the model run: 
-
-    python3 run.py --train  
-
-To evaluate the model and create a confusion matrix plot 📊 run: 
-
-    python3 run.py --eval  
-
-Code of the algorithms can be found in the [classifier.py](classifier.py) 🔗 and [utils.py](utils.py) 🔗 files:
-
-Code of the main function in the starting point [run.py](run.py) 🔗 file can be edited
-
-#### Contacts
-
-For support write to 📧 lutsai.k@gmail.com 📧
+which is for PDF file level processing

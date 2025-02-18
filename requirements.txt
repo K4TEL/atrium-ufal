@@ -1,10 +1,8 @@
-evaluate
-configparser
+h5py
+mahotas
 matplotlib
 numpy
 pandas
-Pillow
-scikit-learn
-torch
-torchvision
-transformers
+python-dotenv
+scikit_learn
+
