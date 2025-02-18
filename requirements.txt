@@ -1,8 +1,7 @@
-h5py
-mahotas
+clip
 matplotlib
 numpy
 pandas
-python-dotenv
+Pillow
 scikit_learn
-
+torch

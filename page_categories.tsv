@@ -1,0 +1,12 @@
+label	description
+DRAW	all sorts of drawings, line art, pen or pencil sketches, paintings, maps, diagrams or schematics, text labels and annotations are allowed 
+DRAW_L	table with legend or form that takes more than half of the page containing all sorts of drawings, line art, pen or pencil sketches, paintings, maps, diagrams or schematics, text labels and annotations are allowed
+LINE_HW	table or form that takes more than half of the page, majority of the table or form cells are filled with handwriting texts, a number of cells filled with predefined templates of machine typed or printed text is significantly smaller than the number of cells filled with handwritten texts, stamps and signatures are allowed
+LINE_P	table or form that takes more than half of the page, majority of the table or form cells are filled with printed texts, handwritten signatures and dates are allowed, no machine typed texts, no pictures, only small logos or stamps are allowed
+LINE_T	table or form that takes more than half of the page, majority of the table or form cells are filled with machine typed texts, handwritten signatures, corrections and dates are allowed, stamps with printed letters are allowed
+PHOTO	full photos or cutouts from photos, textual annotations are allowed
+PHOTO_L	table with legend or form that takes more than half of the page containing full photos or cutouts from photos, text annotations are allowed
+TEXT	text of mixed types like machine typed, printed, and handwritten, no tables, only very small pictures like logos or stamps
+TEXT_HW	handwritten texts, no machine typed or printed texts, only small pictures like tiny pen and pencil sketches are allowed
+TEXT_P	printed texts, not machine typed, only small pictures like logos or stamps are allowed
+TEXT_T	machine typed texts, not printed texts, only small pictures like logos or stamps are allowed
