@@ -1,7 +1,13 @@
-from dotenv import load_dotenv
 from pathlib import Path
 import json
 import pandas as pd
+import deepdoctection as dd
+import argparse
+import os
+import configparser
+import time
+
+from opencv_line_detector import *
 
 category_id_map = {
     1: "Form",
@@ -267,3 +273,161 @@ def selection(files_list: list, cred_min: float, pro_dd: bool) -> list:
         files_list = [filepath for filepath in files_list if str(Path(filepath).stem).startswith("pro")]
     return files_list
 
+
+
+
+
+# getting stats about particular element type from the layout elements
+def el_type_parse(page: dd.Page,
+                  layout: dd.Layout,
+                  el_name: str,
+                  el_out_dict: dict,
+                  credibility: float = 0.0) -> (dict, bool):
+
+    dd_name = None if not el_name else el_name
+    dd_name = "title" if el_name == "HDR" else dd_name
+    dd_name = "figure" if el_name == "IMG" else dd_name
+    dd_name = "text" if el_name == "TXT" else dd_name
+
+    wrong_table = False
+
+    if layout.category_name == dd_name or layout.category_name == "list" and dd_name == "TXT":
+
+        if layout.score < credibility:
+            return el_out_dict
+
+        print(f"{round(layout.score, 2)}\t{el_name}: {layout.text}\t{int(layout.bounding_box.area)}px")
+        el_out_dict[el_name]["AREA"] += layout.bounding_box.area
+        el_out_dict[el_name]["COUNT"] += 1
+
+    elif el_name == "TAB" and len(page.tables) > 0:
+        for j in range(len(page.tables)):
+            tab = page.tables[j]
+
+            if tab.score < credibility:
+                continue
+
+            non_empty_cells = []
+            cells_n = 0
+            for row in tab.csv:
+                for row_col in row:
+                    cells_n += 1
+                    if any(char.isdigit() for char in row_col) or any(char.isalpha() for char in row_col):
+                        non_empty_cells.append(row_col)
+            # print(non_empty_cells)
+
+            if len(non_empty_cells) < cells_n / 2:
+                wrong_table = True
+
+                print(f"{round(tab.score, 2)}\tTAB: {tab.text}\t{int(tab.bounding_box.area)}px")
+                if len(non_empty_cells) > 0:
+
+                    total_txt_area, total_txt_count = 0, 0
+
+                    el_out_dict["IMG"]["AREA"] += 100
+                    el_out_dict["IMG"]["COUNT"] += 1
+                    print(f"[--]\tIMG: 100px")
+
+                    for content_cell in non_empty_cells:
+                        approx_area = 10 * len(content_cell)
+                        el_out_dict["TXT"]["AREA"] += approx_area
+                        el_out_dict["TXT"]["COUNT"] += 1
+                        print(f"[--]\tTXT: {content_cell}\t{approx_area}px")
+
+            else:
+                print(f"{round(tab.score, 2)}\tTAB: {tab.text}\t{int(tab.bounding_box.area)}px")
+                print(tab.csv)
+
+                el_out_dict[el_name]["AREA"] += tab.bounding_box.area
+                el_out_dict[el_name]["COUNT"] += 1
+
+    # print({el_name}, el_out_dict[el_name])
+    return el_out_dict, wrong_table
+
+
+# create page stat json
+def page_layout_analysis(layout_filename: Path, image_filename: Path, output_filename: Path,
+                         credibility: float = 0.0, dd_pro: bool = True ) -> (str, json):
+    long_horiz, long_vert, pictures, long_n, short_n = page_visual_analysis(image_filename, output_filename)
+    # print(long_horiz, long_vert)
+
+    page = dd.Page.from_file(file_path=str(layout_filename))
+    page_text = str(page.text)
+    page_area = page.height * page.width
+
+    found_el_stats = {
+        "TXT": {},  # text
+        "IMG": {},  # figures
+        "TAB": {},  # tables
+        "HDR": {}  # titles / headers
+    }
+
+    for el_type, el_stat_dict in found_el_stats.items():
+        found_el_stats[el_type] = {
+            "COUNT": 0,  # number of elements of this type on the page
+            "AREA": 0,  # area taken by this type of elements
+            "many": False,  # number of this type of elements if the nighest
+            "large": False,  # area taken by this type of elements if more than 1/2 page
+        }
+
+    wrong_table_recognition = False
+    for layout in page.layouts:
+        found_el_stats, wrong_table_recognition = el_type_parse(page, layout, "TAB", found_el_stats, credibility)
+        found_el_stats, _ = el_type_parse(page, layout, "HDR", found_el_stats, credibility)
+        found_el_stats, _ = el_type_parse(page, layout, "TXT", found_el_stats, credibility)
+        found_el_stats, _ = el_type_parse(page, layout, "IMG", found_el_stats, credibility)
+
+    if wrong_table_recognition and pictures:
+        gallery_area = int(page_area * 0.7)
+        print(f"[--] \tIMG: \t{gallery_area}px")
+
+        found_el_stats["IMG"]["AREA"] += gallery_area
+        found_el_stats["IMG"]["COUNT"] += 2
+
+    total_content_area = sum([el_stat["AREA"] for el_stat in found_el_stats.values()])
+
+    for el_name, el_stat_dict in found_el_stats.items():
+        found_el_stats[el_name]["large"] = el_stat_dict["AREA"] > (page_area / 2)
+        found_el_stats[el_name]["many"] = el_stat_dict["COUNT"] > all([e["COUNT"] for name, e
+                                                                       in found_el_stats.items()
+                                                                       if name != el_name])
+
+    j = json.dumps({'FIG': {"area": page_area,
+                                    # rounded ratio of content to the total page area
+                                    "content": round(total_content_area / page_area, 2),
+
+                                    # rounded ratio of each element type comparing to the whole
+                                    # (recognized) content area of this page
+                                    "TAB": round(found_el_stats["TAB"]["AREA"] / total_content_area
+                                                 if total_content_area > 0 else 0, 2),
+                                    "TXT": round(found_el_stats["TXT"]["AREA"] / total_content_area
+                                                 if total_content_area > 0 else 0, 2),
+                                    "IMG": round(found_el_stats["IMG"]["AREA"] / total_content_area
+                                                 if total_content_area > 0 else 0, 2),
+                                    "HDR": round(found_el_stats["HDR"]["AREA"] / total_content_area
+                                                 if total_content_area > 0 else 0, 2),
+
+                                    "TABs": found_el_stats["TAB"]["many"],  # if number of elements is higher than
+                                    "TXTs": found_el_stats["TXT"]["many"],  # number of elements in other categories
+                                    "IMGs": found_el_stats["IMG"]["many"],
+                                    "HDRs": found_el_stats["HDR"]["many"],
+
+                                    "TAB_N": found_el_stats["TAB"]["COUNT"],  # number of elements on the page
+                                    "TXT_N": found_el_stats["TXT"]["COUNT"],
+                                    "IMG_N": found_el_stats["IMG"]["COUNT"],
+                                    "HDR_N": found_el_stats["HDR"]["COUNT"],
+
+                                    "H_line": bool(long_horiz),
+                                    "V_line": bool(long_vert),
+
+                                    "Form": found_el_stats["TAB"]["large"],  # element take more than half ( 1/2 ) space
+                                    "Manuscript": found_el_stats["TXT"]["large"],  # of the whole pagr
+                                    "Gallery": found_el_stats["IMG"]["large"],
+                                    "Front": found_el_stats["HDR"]["large"],
+
+                                    "long_l": long_n,
+                                    "short_l": short_n
+
+                                    }}, ensure_ascii=True)
+
+    return page_text, j

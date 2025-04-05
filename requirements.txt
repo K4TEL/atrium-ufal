@@ -1,9 +1,4 @@
 deepdoctection
-fitz
-matplotlib
 numpy
 opencv_python
 pandas
-pdf2image
-pytesseract
-python-dotenv

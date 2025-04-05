@@ -1,0 +1,12 @@
+[OUTPUT]
+FOLDER_RESULTS=./result
+
+[SETUP]
+raw = False
+pro = True
+dir = True
+inner = False
+credibility = 0.0
+
+[INPUT]
+FOLDER_INPUT=/lnet/work/people/lutsai/pythonProject/pages/eval_pdf
