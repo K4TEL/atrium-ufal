@@ -4,5 +4,7 @@ matplotlib
 numpy
 pandas
 python-dotenv
-scikit_learn
+scikit-learn
+opencv-python
+scikit-image
 

@@ -9,7 +9,7 @@ if __name__ == "__main__":
     top_N = 5
     trees = 333
 
-    max_categ = 500
+    max_categ = 11
 
     data_dir = f'/lnet/work/people/lutsai/pythonProject/pages/train_{"final" if max_categ % 50 == 0 else "balanced"}'
 

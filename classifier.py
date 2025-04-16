@@ -172,6 +172,7 @@ def batch_process_images(image_batch, folder_path):
         feature = img_to_feature(img_path)
         data_features.append(feature)
         data_ids.append(Path(img_path).stem)
+    # print(f"Processed {len(data_features)} images into features {len(data_features)}")
     return data_features, data_ids
 
 
@@ -184,6 +185,7 @@ def batch_prepare_images(image_batch):
         # if feature is not None:
         #     feature.append(feature)
         data_features.append(feature)
+        # print(feature.shape)
     return data_features
 
 
@@ -691,6 +693,7 @@ class RFC:
             res_table, raw_table = [], []
 
             for data_features, data_ids in results:
+                print(data_features[0].shape, data_ids)
                 best_n_scores_normal, best_n, raw_scores, vars, gen_scores = self.top_N_prediction(data_features, self.top_N, general)
 
                 for i, image_f in enumerate(batch_images):
