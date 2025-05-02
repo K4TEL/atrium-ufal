@@ -1,12 +1,12 @@
 label	description
-DRAW	all sorts of drawings, line art, pen or pencil sketches, paintings, maps, diagrams or schematics, text labels and annotations are allowed 
-DRAW_L	table with legend or form that takes more than half of the page containing all sorts of drawings, line art, pen or pencil sketches, paintings, maps, diagrams or schematics, text labels and annotations are allowed
-LINE_HW	table or form that takes more than half of the page, majority of the table or form cells are filled with handwriting texts, a number of cells filled with predefined templates of machine typed or printed text is significantly smaller than the number of cells filled with handwritten texts, stamps and signatures are allowed
-LINE_P	table or form that takes more than half of the page, majority of the table or form cells are filled with printed texts, handwritten signatures and dates are allowed, no machine typed texts, no pictures, only small logos or stamps are allowed
-LINE_T	table or form that takes more than half of the page, majority of the table or form cells are filled with machine typed texts, handwritten signatures, corrections and dates are allowed, stamps with printed letters are allowed
-PHOTO	full photos or cutouts from photos, textual annotations are allowed
-PHOTO_L	table with legend or form that takes more than half of the page containing full photos or cutouts from photos, text annotations are allowed
-TEXT	text of mixed types like machine typed, printed, and handwritten, no tables, only very small pictures like logos or stamps
-TEXT_HW	handwritten texts, no machine typed or printed texts, only small pictures like tiny pen and pencil sketches are allowed
-TEXT_P	printed texts, not machine typed, only small pictures like logos or stamps are allowed
-TEXT_T	machine typed texts, not printed texts, only small pictures like logos or stamps are allowed
+DRAW	drawings, maps, paintings, schematics, graphics, potentially with text
+DRAW_L	drawings, etc with a table legend or inside a table or form
+LINE_HW	handwritten text lines inside (potentially machine+AC0-typed) inside a table or form
+LINE_P	printed text lines inside a table or form (superior to long paragraphs of plain printed text on the same page)
+LINE_T	machine typed text lines inside a table or form (superior to long paragraphs of plain machine+AC0-typed text on the same page)
+PHOTO	photos or cutouts from photos with text captions (superior to a potential drawing on the same page)
+PHOTO_L	photos inside a table or a form, potentially with a tabular legend caption
+TEXT	mixed types of printed and handwritten texts, potentially with tiny insignificant graphic elements
+TEXT_HW	only pure handwritten text
+TEXT_P	only pure printed text
+TEXT_T	only pure machine typed text
