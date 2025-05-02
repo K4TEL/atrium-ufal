@@ -53,38 +53,38 @@ def fd_histogram(image, mask=None):
     return hist.flatten()
 
 
-def sift(image):
-    # Initialize SIFT detector
-    sift = cv2.SIFT_create()
-    # Detect keypoints and descriptors
-    keypoints, descriptors = sift.detectAndCompute(image, None)
-    return keypoints, descriptors
-
-def orb(image):
-    # Detect keypoints and descriptors
-    orb_model = cv2.ORB_create()
-    keypoints_orb, descriptors_orb = orb_model.detectAndCompute(image, None)
-    return keypoints_orb, descriptors_orb
-
-def gabor_filter(image_gray):
-    # Apply Gabor filter
-    frequency = 0.2
-    gabor_image, gabor_response = gabor(image_gray, frequency=frequency)
-    return gabor_image, gabor_response
-
-def lbp(image_gray):
-    # Parameters for LBP
-    radius = 5  # Radius of the circular neighborhood
-    n_points = 5 * radius  # Number of sampling points
-    # Apply LBP to the grayscale image
-    lbp_result = local_binary_pattern(image_gray, n_points, radius, method='uniform')
-    # Histogram of LBP
-    hist, _ = np.histogram(lbp_result.ravel(), bins=np.arange(3, n_points + 3), range=(5, n_points + 2))
-    # Normalize the histogram
-    hist = hist.astype('float')
-    hist /= hist.sum()
-
-    return lbp_result, hist
+# def sift(image):
+#     # Initialize SIFT detector
+#     sift = cv2.SIFT_create()
+#     # Detect keypoints and descriptors
+#     keypoints, descriptors = sift.detectAndCompute(image, None)
+#     return keypoints, descriptors
+#
+# def orb(image):
+#     # Detect keypoints and descriptors
+#     orb_model = cv2.ORB_create()
+#     keypoints_orb, descriptors_orb = orb_model.detectAndCompute(image, None)
+#     return keypoints_orb, descriptors_orb
+#
+# def gabor_filter(image_gray):
+#     # Apply Gabor filter
+#     frequency = 0.2
+#     gabor_image, gabor_response = gabor(image_gray, frequency=frequency)
+#     return gabor_image, gabor_response
+#
+# def lbp(image_gray):
+#     # Parameters for LBP
+#     radius = 5  # Radius of the circular neighborhood
+#     n_points = 5 * radius  # Number of sampling points
+#     # Apply LBP to the grayscale image
+#     lbp_result = local_binary_pattern(image_gray, n_points, radius, method='uniform')
+#     # Histogram of LBP
+#     hist, _ = np.histogram(lbp_result.ravel(), bins=np.arange(3, n_points + 3), range=(5, n_points + 2))
+#     # Normalize the histogram
+#     hist = hist.astype('float')
+#     hist /= hist.sum()
+#
+#     return lbp_result, hist
 
 
 def img_to_feature(img_path):
@@ -102,45 +102,6 @@ def img_to_feature(img_path):
 
     fv_hu_moments, fv_haralick, fv_histogram = fd_hu_moments(img_gray), fd_haralick(img_gray), fd_histogram(img_gray)
 
-    # sift_key, sift_desc = sift(img)
-    orb_key, orb_desc = orb(img)
-    # gab_img, gab_resp = gabor_filter(img_gray)
-    lbp_img, lbp_hist = lbp(img_gray)
-
-    # print("sift", sift_key, sift_desc)
-    # print("orb", len(orb_key))
-    # print("gab", gab_resp)
-    # print("lbp", lbp_hist)
-
-    key_points = []
-    for k_point in orb_key:
-        # print(k_point.octave, k_point.pt, k_point.angle, k_point.size, k_point.response)
-
-        point = [k_point.pt[0]/iw, k_point.pt[1]/ih, k_point.size, k_point.response]
-
-        key_points += point
-
-        if len(key_points) >= 2000:
-            break
-
-    # print(len(orb_key))
-
-    key_points = np.array(key_points)
-    # print(key_points.shape)
-
-    # Draw keypoints
-    # image_with_keypoints_orb = cv2.drawKeypoints(img, orb_key, 0, (255, 111, 0), cv2.DRAW_MATCHES_FLAGS_DRAW_RICH_KEYPOINTS)
-
-    # Display keypoints
-    # plt.imshow(image_with_keypoints_orb)
-    # plt.axis('off')
-    # plt.show()
-
-    # raise NotImplementedError
-
-
-
-
     bi_fv_hu_moments, bi_fv_haralick = fd_hu_moments(binarized_image, True), fd_haralick(
         binarized_image)
 
@@ -156,10 +117,7 @@ def img_to_feature(img_path):
     bi_fv_histogram = [black / area, white / area]
 
     global_feature = np.hstack([fv_histogram, fv_haralick, fv_hu_moments,
-                                bi_fv_haralick, bi_fv_hu_moments, bi_fv_histogram,
-                                lbp_hist, key_points])
-
-    # print(global_feature.shape)
+                                bi_fv_haralick, bi_fv_hu_moments, bi_fv_histogram])
 
     return global_feature
 
@@ -180,12 +138,8 @@ def batch_prepare_images(image_batch):
     """Process a batch of images into features and IDs."""
     data_features = []
     for img_path in image_batch:
-        # img_path = os.path.join(folder_path, image_file)
         feature = img_to_feature(img_path)
-        # if feature is not None:
-        #     feature.append(feature)
         data_features.append(feature)
-        # print(feature.shape)
     return data_features
 
 
@@ -296,9 +250,6 @@ class DataWrapper:
             with Pool(ncpus=mp.cpu_count()) as pool:
                 results = pool.map(batch_prepare_images, [batch_files])
 
-            # print(len(results[0]))
-            # print(results)
-            # res_table, raw_table = [], []
             for ind, image_features in enumerate(results[0]):
                 if image_features is not None:
                     features_data.append(image_features)
@@ -306,14 +257,6 @@ class DataWrapper:
 
             print(f"Processed {len(labels)} images into features")
 
-
-        # for i, file in enumerate(all_category_files):
-        #     print(i, file, category)
-        #     img_path = os.path.join(self.page_dir, category, file)
-        #     global_feature = img_to_feature(img_path)
-        #
-        #     if global_feature is not None:
-        #
 
         data = np.asarray(features_data)
         labels = np.asarray(labels)
@@ -733,66 +676,3 @@ class RFC:
                     append_to_csv(raw_df, raw_output_path)
 
         print("Processing completed.")
-
-        # print(f"Predicting {n} images from {folder_path}")
-        #
-        # # for image_file in images:
-        # #     img_path = os.path.join(folder_path, image_file)
-        # #     feature = img_to_feature(img_path)
-        # #     data_features.append(feature)
-        # #     data_ids.append(Path(img_path).stem)
-        #
-        # print(f"Predicting {len(data_features)} images with {self.top_N} guesses")
-        #
-        # best_n_scores_normal, best_n, raw_scores = self.top_N_prediction(data_features, self.top_N)
-        #
-        # res_table = []
-        # for i, image_f in images:
-        #     categ_labels = [self.categories[c] for c in best_n[i]]
-        #     categ_scores = np.round(best_n_scores_normal[i], 3)
-        #     image_filename = data_ids[i].replace("_", "-")
-        #     image_filename = image_filename.replace("-page-", "-")
-        #     img_file, img_page = image_filename.split("-")
-        #     res_table.append([img_file, img_page, categ_labels, categ_scores])
-        #
-        # # categories = np.argmax(category_distrib, axis=1)
-        # # labels = [self.categories[c] for c in categories]
-        #
-        # if out_table is not None:
-        #     columns = ["FILE", "PAGE"]
-        #     for i in range(self.top_N):
-        #         columns.append(f"CLASS-{i+1}")
-        #     for i in range(self.top_N):
-        #         columns.append(f"SCORE-{i+1}")
-        #
-        #     df = pd.DataFrame(res_table, columns=columns)
-        #
-        #     print(df)
-        #
-        #     df.to_csv(out_table, sep=",", index=False)
-        #
-        #     if raw:
-        #         raw_df = pd.DataFrame(raw_scores, columns=self.categories)
-        #
-        #         raw_df["FILE"] = [d.split("-")[0] for d in data_ids]
-        #         raw_df["PAGE"] = [d.split("-")[1] for d in data_ids]
-        #
-        #         print(raw_df)
-        #
-        #         raw_df.to_csv(
-        #             f'{self.output_dir}/tables/raw_result_{self.top_N}n_{self.weighted_classes[0]}_{self.upper_category_limit}c_{self.N_trees}t.csv',
-        #             index=False, sep=",")
-
-        # if rename:
-        #     for image_name, image_label in zip(data_ids, labels):
-        #         original = f"{folder_path}/{image_name}.png"
-        #
-        #         short_label = image_label[0]
-        #         if "_" in image_label:
-        #             short_label += image_label[image_label.index("_")+1]
-        #
-        #         new_name = f"{folder_path}/{short_label}_{image_name}.png"
-        #
-        #         os.rename(original, new_name)
-
-        # return best_n, [self.categories[c] for c in categories]
