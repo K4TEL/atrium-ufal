@@ -370,9 +370,9 @@ def evaluate_multiple_models(model_dir: str, eval_dir: str, device: str, cat_pre
             print(f"\nEvaluating model: {model_name_stem}")
 
             base_name = None
-            for short, full in map_base_name.items():
+            for short, clip in map_base_name.items():
                 if short in model_name_stem:
-                    base_name = full
+                    base_name = clip
                     break
 
             vis_categ = "UNK"  # Default category

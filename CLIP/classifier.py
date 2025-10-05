@@ -14,7 +14,7 @@ import torchmetrics
 import torchvision
 from torchvision import transforms
 from tqdm import tqdm
-import clip
+import cli
 from PIL import Image, ImageEnhance, ImageFilter
 
 from huggingface_hub import PyTorchModelHubMixin
@@ -64,7 +64,7 @@ class CLIP(nn.Module, PyTorchModelHubMixin):
         self.download_root = '/lnet/work/projects/atrium/cache/clip'
 
         # Must set jit=False for training
-        self.model, self.preprocess = clip.load(model_name, device=device,
+        self.model, self.preprocess = cli.load(model_name, device=device,
                                                 download_root=self.download_root, jit=False)
 
         image_size = (self.preprocess.transforms[0].size, self.preprocess.transforms[0].size)
@@ -119,7 +119,7 @@ class CLIP(nn.Module, PyTorchModelHubMixin):
             else:
                 self.categories = [label for label, desc in loaded_cats]
                 self.texts = [desc for label, desc in loaded_cats]
-                self.text_inputs = torch.cat([clip.tokenize(f"a scan of {description}") for description in self.texts]).to(
+                self.text_inputs = torch.cat([cli.tokenize(f"a scan of {description}") for description in self.texts]).to(
                         device)
                 print(f"Categories: {self.categories} with single description per category.")
 
@@ -138,7 +138,7 @@ class CLIP(nn.Module, PyTorchModelHubMixin):
         with torch.no_grad():
             for category in self.categories:
                 descriptions = [f"a scan of {desc}" for desc in self.texts[category]]
-                tokens = torch.cat([clip.tokenize(desc) for desc in descriptions]).to(self.device)
+                tokens = torch.cat([cli.tokenize(desc) for desc in descriptions]).to(self.device)
                 features = self.model.encode_text(tokens)
                 features /= features.norm(dim=-1, keepdim=True)
                 mean_features = features.mean(dim=0)
@@ -170,7 +170,7 @@ class CLIP(nn.Module, PyTorchModelHubMixin):
         if self.device == "cpu":
             self.model.float()
         else:
-            clip.model.convert_weights(self.model)
+            cli.model.convert_weights(self.model)
 
         writer = SummaryWriter(log_dir=log_dir)
         weights_path = Path("model_checkpoints")
@@ -186,7 +186,20 @@ class CLIP(nn.Module, PyTorchModelHubMixin):
                                         test_ratio=self.test_fraction)
 
         train_labels = torch.tensor(train_dataset.targets)
-        train_sampler = CLIP_BalancedBatchSampler(train_labels, batch_size, 1)
+
+        num_unique_classes = len(set(train_dataset.targets))
+        n_classes_for_sampler = min(batch_size, num_unique_classes)
+
+        if n_classes_for_sampler < batch_size:
+            # This warning helps explain why the effective batch size might be smaller than configured.
+            print(
+                f"Warning: Number of classes to sample in CLIP_BalancedBatchSampler reduced from {batch_size} to {n_classes_for_sampler}, as only {num_unique_classes} unique classes are available in the dataset.")
+
+        # Pass the capped value to the sampler
+        # Since n_samples=1, the effective batch size will now be n_classes_for_sampler.
+        train_sampler = CLIP_BalancedBatchSampler(train_labels, n_classes_for_sampler, 1)
+
+        # train_sampler = CLIP_BalancedBatchSampler(train_labels, batch_size, 1)
         train_dataloader = torch.utils.data.DataLoader(train_dataset, batch_sampler=train_sampler)
 
         test_dataset = ImageFolderCustom(train_dir,
@@ -298,12 +311,12 @@ class CLIP(nn.Module, PyTorchModelHubMixin):
 
             # For evaluation, always use ALL pre-computed text features
             if self.avg:
-                text_features_eval = self.text_features  # Use the pre-computed full set of averaged text features
+                text_features_eval = self.text_features  # Use the pre-computed clip set of averaged text features
                 text_features_eval = text_features_eval / text_features_eval.norm(dim=-1,
                                                                                   keepdim=True)  # Ensure normalized
             else:
                 # Original logic for non-averaged categories
-                all_texts = torch.cat([clip.tokenize(f"a scan of {c}") for c in self.texts]).to(self.device)
+                all_texts = torch.cat([cli.tokenize(f"a scan of {c}") for c in self.texts]).to(self.device)
                 with torch.no_grad():
                     text_features_eval = self.model.encode_text(all_texts)
                     text_features_eval = text_features_eval / text_features_eval.norm(dim=-1, keepdim=True)
@@ -431,14 +444,14 @@ class CLIP(nn.Module, PyTorchModelHubMixin):
         self.model.eval()
 
         if self.avg:
-            text_features_test = self.text_features  # Use the pre-computed full set of averaged text features
+            text_features_test = self.text_features  # Use the pre-computed cli set of averaged text features
             text_features_test /= text_features_test.norm(dim=-1, keepdim=True)  # Ensure normalized
         else:
             # Original logic for non-averaged categories
             # The `test_dataloader.dataset.texts` is not directly accessible if not `self.avg`.
             # Instead, use the `self.texts` which holds all descriptions.
             all_texts = torch.cat(
-                [clip.tokenize(f"a scan of {c}") for c in self.texts]).to(self.device)
+                [cli.tokenize(f"a scan of {c}") for c in self.texts]).to(self.device)
             with torch.no_grad():
                 text_features_test = self.model.encode_text(all_texts)
                 text_features_test /= text_features_test.norm(dim=-1, keepdim=True)

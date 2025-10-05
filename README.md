@@ -8,9 +8,9 @@ N predictions output, predictions summarizing into a tabular format,
 HF 😊 hub support for the model, multiplatform (Win/Lin) data 
 preparation scripts for PDF to PNG conversion
 
-**CLIP**: [README.md](clip/README.md)
+**CLIP**: [README.md](CLIP/README.md)
 
-**ViT** (and EffNetV2): [README.md](vit/README.md)
+**ViT** (and EffNetV2): [README.md](ViT+CNN/README.md)
 
 ## Contacts 📧
 
