@@ -48,6 +48,11 @@ of HF 😊 hub [^1] 🔗
 |  `v5.2` | `vit-large-patch16-384`          | 15855 | **5730** | same data as `v2.2`, but the largest model base with higher resolution             |
 |  `v1.2` | `efficientnetv2_s.in21k`         | 15855 | **5730** | same data as `v2.2`, but the smallest model base (CNN)                             |
 |  `v4.2` | `efficientnetv2_l.in21k_ft_in1k` | 15855 | **5730** | same data as `v2.2`, CNN base model smaller than the largest, may be more accurate |
+|  `v2.3` | `vit-base-patch16-224`           | 38625 |  **0**   | new data annotation phase data, more single-page documents used                    |
+|  `v3.3` | `vit-base-patch16-384`           | 38625 |  **0**   | same data as `v2.3`, but a bit larger model base with higher resolution            |
+|  `v5.3` | `vit-large-patch16-384`          | 38625 |  **0**   | same data as `v2.3`, but the largest model base with higher resolution             |
+|  `v1.3` | `efficientnetv2_s.in21k`         | 38625 |  **0**   | same data as `v2.3`, but the smallest model base (CNN)                             |
+|  `v4.3` | `efficientnetv2_l.in21k_ft_in1k` | 38625 |  **0**   | same data as `v2.3`, CNN base model smaller than the largest, may be more accurate |
 
 <details>
 
@@ -90,8 +95,34 @@ paper source into one of the categories - each responsible for the following con
 
 ### Data 📜
 
-The dataset is provided under Public Domain license, and consists of **15855** PNG images of pages from the archival documents.
-The source image files and their annotation can be found in the LINDAT repository [^17] 🔗.
+[//]: # (The dataset is provided under Public Domain license, and consists of **15855** PNG images of pages from the archival documents.)
+[//]: # (The source image files and their annotation can be found in the LINDAT repository [^17] 🔗.)
+
+Our dataset is not split using a simple random shuffle. This is because the data contains structured and clustered 
+distributions of page types within many categories. A random shuffle would likely result in subsets with poor 
+representative variability.
+
+Instead, we use a deterministic, periodic sampling method with a randomized offset. To maximize the size of the 
+training 💪 set, we select the development and test 🏆 subsets first. The training subset then consists of all remaining pages.
+
+Here's the per-category 🪧 procedure for selecting the development and test 🏆 sets:
+
+1. For the category of size `N` compute  the desired subset size, `k`, as a fixed proportion (`test_ratio` which was 10%) of `N`
+2. Compute a selection step, `S`, as `S ≈ N/k` which serves a period base for the selection
+3. Apply a random shift to `S` - an integer index in the range `[S_i - S/4; S_i + S/4]` for every `i`-th of `k` steps of `S`.
+4. Select every `S`-th (`S`-thish in fact) element from the alphabetically ordered sequence after applying the random shift.
+5. Finally, Limit selected indices to be within the range of the category size `N`.
+
+This method produces subsets that:
+
+- Respect the original ordering and local clustering in the data
+- Preserve the proportional representation of each category
+- Introduce controlled randomness, so the selected samples are not strictly periodic
+
+This ensures that our subsets cover the full chronological and structural variability of the 
+collection, leading to a more robust and reliable model evaluation. At the last stages, the whole
+procedure was performed several times in terms of the cross-validation training, when each new fold
+used a incremented by 1 random seed for the random shifts step.
 
 **Training** 💪 set of the model: **8950** images for `v2.0`
 
@@ -99,22 +130,44 @@ The source image files and their annotation can be found in the LINDAT repositor
 
 **Training** 💪 set of the model: **14565** images for `vX.2` 
 
-> **90% of all** - proportion in categories 🪧 tabulated [below](#categories-)
+**Training** 💪 set of the model: **38625** images for `vX.3` 
+
+The training subsets above are followed by the test sets below:
 
 **Evaluation** 🏆 set:  **1290** images (taken from `v2.2` annotations)
 
-> **10% of all** - same proportion in categories 🪧 as [below](#categories-) and demonstrated in [model_EVAL.csv](result%2Ftables%2F20250701-1057_model_v220105p_TOP-1_EVAL.csv) 📎
+**Evaluation** 🏆 set:  **4823** images (for `vX.3` models)
 
-Manual ✍️ annotation was performed beforehand and took some time ⌛, the categories 🪧  were formed from
+Manual ✍️ annotation was performed beforehand and took some time ⌛, the categories 🪧 tabulated  [below](#categories-) were formed from
 different sources of the archival documents originated in the 1920-2020 years span. 
+
+| Category        | Dataset 0   | Dataset 1    | Dataset 2    | Dataset 3     |
+|-----------------|-------------|--------------|--------------|---------------|
+| DRAW            | 1090 (9.1%) | 1368 (8.8%)  | 1472 (9.3%)  | 2709 (5.6%)   |
+| DRAW_L          | 1091 (9.1%) | 1383 (8.9%)  | 1402 (8.8%)  | 2921 (6.0%)   |
+| LINE_HW         | 1055 (8.8%) | 1113 (7.2%)  | 1115 (7.0%)  | 2514 (5.2%)   |
+| LINE_P          | 1092 (9.1%) | 1540 (9.9%)  | 1580 (10.0%) | 2439 (5.0%)   |
+| LINE_T          | 1098 (9.2%) | 1664 (10.7%) | 1668 (10.5%) | 9883 (20.4%)  |
+| PHOTO           | 1081 (9.1%) | 1632 (10.5%) | 1730 (10.9%) | 2691 (5.5%)   |
+| PHOTO_L         | 1087 (9.1%) | 1087 (7.0%)  | 1088 (6.9%)  | 2830 (5.8%)   |
+| TEXT            | 1091 (9.1%) | 1587 (10.3%) | 1592 (10.0%) | 14227 (29.3%) |
+| TEXT_HW         | 1091 (9.1%) | 1092 (7.1%)  | 1092 (6.9%)  | 2008 (4.1%)   |
+| TEXT_P          | 1083 (9.1%) | 1540 (9.9%)  | 1633 (10.3%) | 2312 (4.8%)   |
+| TEXT_T          | 1081 (9.1%) | 1476 (9.5%)  | 1482 (9.3%)  | 3965 (8.2%)   |
+| **Unique PDFs** | 5001        | 5694         | 5729         | 37328         |
+| **Total Pages** | 11,940      | 15,482       | 15,854       | 48,499        |
+
+
+The table above shows category distribution for different model versions, where the last column
+(`Dataset 3`) corresponds to the latest `vX.3` models data, which actually used 14,000 pages of
+`TEXT` category, while other columns cover all the used samples - specifically 80% as training 💪, 
+and 10% each as development and test 🏆 sets. The early model version used 90% of the data as training 💪
+and the remaining 10% as both development and test 🏆 set due to the lack of annotated (manually 
+classified) pages.
 
 > [!NOTE]
 > Disproportion of the categories 🪧 in both training data and provided evaluation [category_samples](category_samples) 📁 is
 > **NOT** intentional, but rather a result of the source data nature. 
-
-In total, several thousands of separate PDF files were selected and split into PNG pages, ~4k of scanned documents 
-were one-page long which covered around a third of all data, and ~2k of them were much longer (dozens and hundreds 
-of pages) covering the rest (more than 60% of all annotated data). 
 
 The specific content and language of the
 source data is irrelevant considering the model's vision resolution, however, all of the data samples were from **archaeological 
@@ -189,7 +242,7 @@ Clone this project to your local machine 🖥️️ via:
     git init
     git clone https://github.com/ufal/atrium-page-classification.git
 
-Then change to the Vit and EffNet models or CLIP models branch (`master`, `clip` or `vit`):
+Then change to the Vit and EffNet models or CLIP models branch (`clip` or `vit`):
 
     cd atrium-page-classification
     git checkout vit
@@ -205,7 +258,7 @@ And then for updating the project with the latest changes from the remote reposi
 
     git pull -X theirs
 
-Alternatively, if you are interested in a specific branch (`master`, `clip` or `vit`), you can update  it via:
+Alternatively, if you are interested in a specific branch (`clip` or `vit`), you can update  it via:
 
     git fetch origin
     git checkout vit        
@@ -223,7 +276,7 @@ And then for a total clean up and update, run:
     rm README*
     git pull
 
-Alternatively, for a specific branch (`master`, `clip` or `vit`):
+Alternatively, for a specific branch (`clip` or `vit`):
 
     git reset --hard HEAD
     git clean -fd
@@ -232,7 +285,7 @@ Alternatively, for a specific branch (`master`, `clip` or `vit`):
     git pull origin vit
 
 
-Overall, a force update to the remote repository branch (`master`, `clip` or `vit`) looks like this:
+Overall, a force update to the remote repository branch (`clip` or `vit`) looks like this:
 
     git fetch origin
     git checkout vit
@@ -276,7 +329,7 @@ to **pull the model from the HF 😊 hub repository [^1] 🔗** via:
 
     python3 run.py --hf
 
-**OR** for specific model version (e.g. `main`, `v2.0` or `vX.2`) use the `--revision` flag:
+**OR** for specific model version (e.g. `main`, `v2.0`, `vX.2` or `vX.3`) use the `--revision` flag:
  
     python3 run.py --hf -rev v2.0
 
@@ -426,7 +479,8 @@ directory with Python files and only then proceed.
 
 The following prediction should be run using the `-f` or `--file` flag with the path argument. Optionally, 
 you can use the `-tn` or `--topn` flag with the number of guesses you want to get, and also the `-m` or 
-`--model` flag with the path to the model folder argument. 
+`--model` flag with the path to the model folder argument. For the specific image file format collection from
+the input fictionary use `-ff` or `--file_format` flag with the format argument (default is `jpeg`).
 
 <details>
 
@@ -464,6 +518,10 @@ processing can be used. In addition, 2 directory-specific flags  `--inner` and `
 Worth mentioning that the **directory 📁 level processing is performed in batches**, therefore you should refer to
 the hardware's memory capacity requirements for different batch sizes tabulated [above](#how-to-run-prediction--modes).
 
+Moreover, in case you have a large amount of files (more than 500,000) that you attempt to process in one run,
+you should keep in mind that even listing all of the files from all of the subdirectories may take a while ⌛,
+not to mention the actual processing time.
+
 <details>
 
 <summary>How to 👀</summary>
@@ -478,6 +536,7 @@ for exactly TOP-3 guesses in tabular format from all images found in the given d
     
     python3 run.py -rev v3.2 -b google/vit-base-patch16-384 --inner --dir
 
+    python3 run.py -m "./models/model_v43" --dir -ff png
 
 </details>
 
@@ -515,6 +574,11 @@ results can be found in the [result](result) 📁 folder.
 | `v3.2`       | 96.49     | 99.94     |
 | `v4.2`       | 97.73     | 99.87     |
 | `v5.2`       | 97.86     | 99.87     |
+| `v1.3`       | 96.83     | 99.71     |
+| `v2.3`       | 98.00     | 99.96     |
+| `v3.3`       | 98.57     | 99.98     |
+| `v4.3`       | 98.15     | 99.61     |
+| `v5.3`       | 99.01     | 99.98     |
 
 `v2.2` Evaluation set's accuracy (**Top-1**):  **97.54%** 🏆
 
@@ -565,6 +629,58 @@ results can be found in the [result](result) 📁 folder.
 ![TOP-1 confusion matrix](result%2Fplots%2F20250709-1829_model_v120106l_conf_mat_TOP-1.png)
 
 </details>
+
+
+`v1.3` Evaluation set's accuracy (**Top-1**):  **96.83%** 🏆
+
+<details>
+
+<summary>Confusion matrix 📊 TOP-1 👀</summary>
+
+![TOP-1 confusion matrix](result%2Fplots%2F20251004-1000_model_v13a5_conf_mat_TOP-1.png)
+
+</details>
+
+`v2.3` Evaluation set's accuracy (**Top-1**):  **98.0%** 🏆
+
+<details>
+
+<summary>Confusion matrix 📊 TOP-1 👀</summary>
+
+![TOP-1 confusion matrix](result%2Fplots%2F20251004-1022_model_v23a5_conf_mat_TOP-1.png)
+
+</details>
+
+`v3.3` Evaluation set's accuracy (**Top-1**):  **98.0%** 🏆
+
+<details>
+
+<summary>Confusion matrix 📊 TOP-1 👀</summary>
+
+![TOP-1 confusion matrix](result%2Fplots%2F20251004-1443_model_v33a5_conf_mat_TOP-1.png)
+
+</details>
+
+`v4.3` Evaluation set's accuracy (**Top-1**):  **98.15%** 🏆
+
+<details>
+
+<summary>Confusion matrix 📊 TOP-1 👀</summary>
+
+![TOP-1 confusion matrix](result%2Fplots%2F20251004-1934_model_v43a5_conf_mat_TOP-1.png)
+
+</details>
+
+`v5.3` Evaluation set's accuracy (**Top-1**):  **99.01%** 🏆
+
+<details>
+
+<summary>Confusion matrix 📊 TOP-1 👀</summary>
+
+![TOP-1 confusion matrix](result%2Fplots%2F20251004-1014_model_v53a5_conf_mat_TOP-1.png)
+
+</details>
+
 
 > **Confusion matrices** provided above show the diagonal of matching gold and predicted categories 🪧
 > while their off-diagonal elements show inter-class errors. By those graphs you can judge 
@@ -627,6 +743,46 @@ Demo files  `v4.2`:
 
 - **Unchecked with TRUE** values (small): [model_TOP-1.csv](result%2Ftables%2F20250710-1942_model_v120106l_TOP-1.csv)📎
 
+
+Demo files  `v2.3`:
+
+- Manually ✍️ **checked** evaluation dataset (TOP-1): [model_TOP-1_EVAL.csv](result%2Ftables%2F20251004-1015_model_v23a5_TOP-1_EVAL.csv) 📎
+
+- Manually ✍️ **checked** evaluation dataset (TOP-3): [model_TOP-3_EVAL.csv](result%2Ftables%2F20251004-1704_model_v23a5_TOP-3_EVAL.csv) 📎
+
+- **Unchecked with TRUE** values (small): [model_TOP-1.csv](result%2Ftables%2F20251004-2013_model_v23a5_TOP-1.csv)📎
+
+Demo files  `v3.3`:
+
+- Manually ✍️ **checked** evaluation dataset (TOP-1): [model_TOP-1_EVAL.csv](result%2Ftables%2F20251004-1435_model_v33a5_TOP-1_EVAL.csv) 📎
+
+- Manually ✍️ **checked** evaluation dataset (TOP-3): [model_TOP-3_EVAL.csv](result%2Ftables%2F20251004-1643_model_v33a5_TOP-3_EVAL.csv) 📎
+
+- **Unchecked with TRUE** values (small): [model_TOP-1.csv](result%2Ftables%2F20251004-2012_model_v33a5_TOP-1.csv)📎
+
+Demo files  `v5.3`:
+
+- Manually ✍️ **checked** evaluation dataset (TOP-1): [model_TOP-1_EVAL.csv](result%2Ftables%2F20251004-1004_model_v53a5_TOP-1_EVAL.csv) 📎
+
+- Manually ✍️ **checked** evaluation dataset (TOP-3): [model_TOP-3_EVAL.csv](result%2Ftables%2F20251004-1652_model_v53a5_TOP-3_EVAL.csv) 📎
+
+- **Unchecked with TRUE** values (small): [model_TOP-1.csv](result%2Ftables%2F20251004-2011_model_v53a5_TOP-1.csv)📎
+
+Demo files  `v1.3`:
+
+- Manually ✍️ **checked** evaluation dataset (TOP-1): [model_TOP-1_EVAL.csv](result%2Ftables%2F20251004-0954_model_v13a5_TOP-1_EVAL.csv) 📎
+
+- Manually ✍️ **checked** evaluation dataset (TOP-3): [model_TOP-3_EVAL.csv](result%2Ftables%2F20251004-1935_model_v13a5_TOP-3_EVAL.csv) 📎
+
+- **Unchecked with TRUE** values (small): [model_TOP-1.csv](result%2Ftables%2F20251004-2011_model_v13a5_TOP-1.csv)📎
+
+Demo files  `v4.3`:
+
+- Manually ✍️ **checked** evaluation dataset (TOP-1): [model_TOP-1_EVAL.csv](result%2Ftables%2F20251004-1927_model_v43a5_TOP-1_EVAL.csv) 📎
+
+- Manually ✍️ **checked** evaluation dataset (TOP-3): [model_TOP-3_EVAL.csv](result%2Ftables%2F20251004-1928_model_v43a5_TOP-3_EVAL.csv) 📎
+
+- **Unchecked with TRUE** values (small): [model_TOP-1.csv](result%2Ftables%2F20251004-2009_model_v43a5_TOP-1.csv)📎
 
 With the following **columns** 📋:
 
@@ -1122,12 +1278,34 @@ You can slightly change the `test_size` and / or
 the `batch` variable value in the [config.txt](config.txt) ⚙ file to train a differently named model on the same dataset.
 Alternatively, adjust the **model naming generation** in the [classifier.py](classifier.py)'s 📎 training function.
 
+In terms of the input data splitting, **this code is adapted to the filenames containing date stamps** which are leveraged
+in the filenames sorting, and then randomized step selection, of separate categories 🪧 for the final evaluation and the 
+training-time-evaluation (so-called, dev) subsets - both of the same `test_ratio` size. This behaviour is specifically
+triggered when the `--folds` argument or `cross_runs` variable in the `[TRAIN]` section of the [config.txt](config.txt) ⚙ file 
+is set above 1, as well as when the `--train` flag is used for a single run. 
+
+> [!TIP]
+> The cross-validation takes more time and reselects the data subsets for each run based on a `seed` variable of the
+> `[SETUP]` section in the [config.txt](config.txt) ⚙ file which gets simply incremented by one for each fold (run) of the
+> cross-validation process. The listed data splits are recorded as `.txt` files in the `result/stats` directory 📁 for 
+> each fold of the overall model training run, as well as the fold's final test set predictions are saved in 
+> `result/tables` directory 📁. The trained models are saved as model_<revision><fold>.
+
+Moreover, the models trained in the cross-validation mode that have the same base model can be averaged and saved
+as a separate model for further evaluation or prediction inference. To do this, you should run the following command:
+
+    python3 run.py --average -ap model_v<revision>
+
+where `model_<revision>` is the common part of the model folders' names, for example, `model_v1`. Which will result
+in a new model saved as `model_<revision>a<#folds>` next to its parent models in the models' directory 📁.
+
 ### Evaluation 🏆
 
 After the fine-tuned model is saved 💾, you can explicitly call for evaluation of the model to get a table of TOP-N classes for
-the randomly composed subset (10% in size by default) of the training page folder. 
+the semi-randomly composed subset (10% in size by default) of the training page folder. The class proportions are preserved, 
+and the data is uniformly spread across the time span of the provided dataset.
 
-There is an option of setting `test_size` to 0.8 and use all the sorted by category pages provided 
+There is an option of setting `test_size` to 0.4 and use all the sorted by category pages provided 
 in `[TRAIN]`'s folder for evaluation, but do **NOT** launch it on the whole training data you have actually used up
 for the evaluated model training.
 
@@ -1151,6 +1329,10 @@ revision `v1.9.22` turns to `model_v1922` model folder), and only then run repo 
 > Set your own `repo_name` to the empty one of yours on HF 😊 hub, then in the **Settings** of your HF 😊 account
 > find the **Access Tokens** section and generate a new token - copy and paste its value to the `token` variable. Before committing 
 > those [config.txt](config.txt) ⚙ file changes via git replace the full `token` value with its shortened version for security reasons.
+
+Alternatively, you can evaluate models on a separate dataset of pages, which should be stored in a directory 📁 and 
+provided in the `[EVAL]` section of the [config.txt](config.txt) ⚙ file. The directory structure should be the 
+same as for the training pages directory - the category 🪧 subdirectories are required.
 
 ----
 

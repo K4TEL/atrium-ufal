@@ -6,15 +6,15 @@ FOLDER_MODELS=./model
 [EVAL]
 FOLDER_PAGES=./category_samples
 
-
 [TRAIN]
 FOLDER_PAGES=./category_samples
 
+cross_runs = 1
 test_size = 0.1
-log_step = 10
-epochs = 10
+log_step = 100
+epochs = 3
 lr = 5e-5
-max_categ = 2000
+max_categ = 14000
 Training = False
 Testing = False
 
@@ -28,10 +28,11 @@ inner = False
 
 [INPUT]
 FOLDER_INPUT=./category_samples
+INPUT_FORMAT = jpeg
 
 [HF]
 repo_name = ufal/vit-historical-page
 token = hf_ALr...zdBL
 use_hf = False
-revision = v2.20.10.5p
+revision = v2.3
 latest = v2.2
