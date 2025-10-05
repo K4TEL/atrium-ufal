@@ -6,6 +6,8 @@ import random
 from sklearn.metrics import accuracy_score, confusion_matrix, classification_report, ConfusionMatrixDisplay
 from matplotlib import pyplot as plt
 import time
+import datetime
+import re
 import scipy.special
 
 # get list of all files in the folder and nested folders by file format
@@ -243,3 +245,13 @@ def confusion_plot(predictions: list, trues: list, categories: list, out_model: 
     out = f"{output_dir if output_dir else 'result'}/plots/{time_stamp}_{out_model}_conf_mat_TOP-{top_N}.png"
     plt.savefig(out, bbox_inches='tight', dpi=300)
     plt.close()
+
+
+def append_to_csv(df, filepath):
+    """
+    Appends a DataFrame to a CSV file, or creates a new file if it doesn't exist.
+    """
+    if not os.path.exists(filepath):
+        df.to_csv(filepath, index=False, sep=",")
+    else:
+        df.to_csv(filepath, mode="a", header=False, index=False, sep=",")

@@ -1,9 +1,9 @@
 import argparse
-import os
 from huggingface_hub import create_branch
 
 import configparser
 from classifier import *
+from utils import *
 import time
 
 if __name__ == "__main__":
@@ -17,10 +17,10 @@ if __name__ == "__main__":
 
 
     revision_to_base_model = {
-        "v1.1": "ViT-B/16",
-        "v1.2": "ViT-B/32",
-        "v2.1": "ViT-L/14",
-        "v2.2": "ViT-L/14@336",
+        "v1.1.": "ViT-B/16",
+        "v1.2.": "ViT-B/32",
+        "v2.1.": "ViT-L/14",
+        "v2.2.": "ViT-L/14@336",
     }
     # Initialize the parser
     config = configparser.ConfigParser()
@@ -55,6 +55,7 @@ if __name__ == "__main__":
     model_path = Path(f"{hf_models_directory}/{model_name_local}")
 
     test_dir = config.get('INPUT', 'FOLDER_INPUT')
+    input_format = config.get('INPUT', 'INPUT_FORMAT')  # input image format, e.g. PNG
 
     epochs = config.getint("TRAIN", "epochs")
     max_categ = config.getint("TRAIN", "max_categ")  # max number of category samples
@@ -66,7 +67,7 @@ if __name__ == "__main__":
     raw = config.getboolean('SETUP', 'raw')
     zero_shot = config.getboolean('SETUP', 'zero_shot')  # zero-shot prediction without training
     visualize = config.getboolean('SETUP', 'visualize')  # visualize model accuracy statistics
-
+    download_root = config.get('SETUP', 'model_storage')  # root directory for downloading datasets
 
     # cur = Path.cwd()  # directory with this script
     cur = Path(__file__).resolve().parent  # directory with this script
@@ -81,7 +82,7 @@ if __name__ == "__main__":
     parser.add_argument('-f', "--file", type=str, default=None, help="Single PNG page path for prediction.")
     parser.add_argument('-d', "--directory", type=str, default=None,
                         help="Path to folder with PNG pages for prediction.")
-    parser.add_argument("--dir", help="Predict a whole directory of images.", action="store_true")
+    parser.add_argument("--dir", help="Predict a whole directory of images recursively.", action="store_true")
     parser.add_argument('-m', "--model", type=str, default=base_model,
                         help="CLIP model name to use. Default is ViT-B/32.")
 
@@ -101,7 +102,7 @@ if __name__ == "__main__":
     parser.add_argument('--cat_dir', type=str, default=categ_directory, help='Directory with category description files.'),
     parser.add_argument('--avg', action='store_true', default=avg, help='Average scores from multiple category description files.')
     parser.add_argument('--zero_shot', action='store_true', default=zero_shot, help='Perform zero-shot prediction (no training).')
-    parser.add_argument('--vis', action='store_true',default=visualize, help='Visualize model accuracy statsistics.')
+    parser.add_argument('--vis', action='store_true',default=visualize, help='Visualize model accuracy statistics.')
 
     # Common arguments
     parser.add_argument('-tn', "--topn", type=int, default=top_N, help="Number of top result categories to consider.")
@@ -114,7 +115,6 @@ if __name__ == "__main__":
     parser.add_argument("--model_dir", type=str, default=hf_models_directory,
                         help="Path to the directory of saved model checkpoints (.pt files) for evaluation.")
 
-
     parser.add_argument('-rev', "--revision", type=str, default=None, help="HuggingFace revision (e.g. `main`, `vN.0` or `vN.M`)")
     parser.add_argument("--hf", help="Use model and processor from the HuggingFace repository", default=HF, action="store_true")
     parser.add_argument("--raw", help="Output raw scores for each category", default=raw, action="store_true")
@@ -125,14 +125,13 @@ if __name__ == "__main__":
     input_dir = Path(test_dir) if args.directory is None else Path(args.directory)
     Training, top_N, raw = args.train, args.topn, args.raw
 
-
     if args.revision is None: # using config file revision
         args.revision = hf_version
     else:
-        if args.revision not in revision_to_base_model:
+        if not any(link for link in revision_to_base_model if args.revision.startswith(link)):
             raise ValueError(f"Revision {args.revision} is not supported. Available revisions: {list(revision_to_base_model.keys())}")
 
-        base_model = revision_to_base_model[args.revision]
+        base_model = revision_to_base_model[args.revision[:len(revision_to_base_model.keys().__iter__().__next__())]]
         if args.model != base_model:
             print(f"Base model {args.base} does not match the revision {args.revision}. Using {base_model} instead.")
             args.model = base_model
@@ -142,6 +141,7 @@ if __name__ == "__main__":
         os.makedirs(output_dir)
 
         os.makedirs(f"{output_dir}/tables")
+        os.makedirs(f"{output_dir}/stats")
         os.makedirs(f"{output_dir}/plots")
 
     if not cp_dir.is_dir():
@@ -161,15 +161,20 @@ if __name__ == "__main__":
 
     args.logdir += f"-{args.model.replace('/', '_')}" if args.model else ""
 
+    print("Arguments:")
+    for arg in vars(args):
+        if getattr(args, arg) is not None and getattr(args, arg) != False:
+            print(arg, "\t=\t", getattr(args, arg))
+
     cur = Path(__file__).parent
-    output_dir = cur / "results"
+    output_dir = cur / "result"
     output_dir.mkdir(exist_ok=True)
 
     cat_directory = str(cur / args.cat_dir)
-    clip_instance = CLIP(max_category_samples=args.max_categ,
+    clip_instance = CLIP(max_category_samples=args.max_categ, test_ratio=test_size,
                          eval_max_category_samples=args.max_categ_eval,
                          top_N=args.topn, model_name=args.model, device=device,
-                         categories_tsv=categ_file,
+                         categories_tsv=categ_file, seed=seed, input_format=input_format,
                          output_dir=str(output_dir), categories_dir=cat_directory,
                          cat_prefix=args.cat_prefix, avg=args.avg, zero_shot=args.zero_shot)
 
@@ -247,7 +252,8 @@ if __name__ == "__main__":
         if not os.path.isdir(data_dir):
             raise ValueError(f"Train directory not found at: {data_dir}")
         if not os.path.isdir(data_dir_eval):
-            raise ValueError(f"Evaluation directory not found at: {data_dir_eval}")
+            print(f"Warning: Evaluation directory not found at: {data_dir_eval}. Using training directory for evaluation.")
+            data_dir_eval = data_dir
 
         clip_instance.train(
             train_dir=data_dir,
@@ -263,7 +269,8 @@ if __name__ == "__main__":
             print(f"CSV file for visualization not found at {csv}. Please run model evaluation first.")
         else:
             visualize_results(str(csv), str(output_dir / 'stats'), args.zero_shot)
-    elif args.eval:
+
+    if args.eval:
         weights_path = Path("model_checkpoints")
         if args.zero_shot:
             model_path_str = None
@@ -284,7 +291,8 @@ if __name__ == "__main__":
             model_path_str = str(weights_path / model_path_str)
 
         if not os.path.isdir(data_dir_eval):
-            raise ValueError(f"Evaluation directory not found at: {data_dir_eval}")
+            print(f"Warning: Evaluation directory not found at: {data_dir_eval}. Using training directory for evaluation.")
+            data_dir_eval = data_dir
 
         clip_instance.evaluate_saved_model(
             model_path=model_path_str,
@@ -293,7 +301,8 @@ if __name__ == "__main__":
         )
     elif args.eval_dir:
         if not os.path.isdir(data_dir_eval):
-            raise ValueError(f"Evaluation directory not found at: {data_dir_eval}")
+            print(f"Warning: Evaluation directory not found at: {data_dir_eval}. Using training directory for evaluation.")
+            data_dir_eval = data_dir
         if not os.path.isdir(args.model_dir):
             raise ValueError(f"Model directory not found at: {args.model_dir}. Please provide a valid path.")
 
@@ -304,6 +313,12 @@ if __name__ == "__main__":
             device=device,
             cat_prefix=args.cat_prefix,
             vis=True,
+            upper_categ_limit=args.max_categ_eval,
+            random_seed=seed,
+            preprocess_func=clip_instance.preprocess,
+            input_format=input_format,
+            img_size=clip_instance.preprocess.transforms[0].size,
+            test_fraction=test_size,
             zero_shot=args.zero_shot,
         )
     elif args.zero_shot:  # New branch for zero-shot prediction
@@ -314,7 +329,7 @@ if __name__ == "__main__":
             input_dir_pred = Path(args.directory) if args.directory is not None else cur / 'test-images' / 'pages'
             table_out_path = output_dir / 'tables'
             table_out_path.mkdir(exist_ok=True, parents=True)
-            directory_result_output = str(table_out_path / f'zero_shot_raw_result_{args.model.replace("/", "")}_{args.topn}n_{max_categ}c.csv')
+            directory_result_output = str(table_out_path / f'{time_stamp}zero_shot_raw_result_{args.model.replace("/", "")}_{args.topn}n_{max_categ}c.csv')
             clip_instance.predict_directory(str(input_dir_pred), raw=True, out_table=directory_result_output)
         else:
             print("Please specify a file (-f) or a directory (-d) for zero-shot prediction.")
@@ -330,11 +345,10 @@ if __name__ == "__main__":
                 print(f"Prediction for {args.file}:\n{prediction}")
 
         if args.dir or args.directory is not None:
-            input_dir_pred = Path(args.directory) if args.directory is not None else cur / 'test-images' / 'pages'
             table_out_path = output_dir / 'tables'
             table_out_path.mkdir(exist_ok=True, parents=True)
-            directory_result_output = str(table_out_path / f'result_{time_stamp}_{args.model.replace("/", "")}_{args.topn}n_{max_categ}c.csv')
-            clip_instance.predict_directory(str(input_dir_pred), raw=True, out_table=directory_result_output)
+            directory_result_output = str(table_out_path / f'{time_stamp}_result_{args.model.replace("/", "")}_{args.topn}n_{max_categ}c.csv')
+            clip_instance.predict_directory(str(input_dir), raw=True, out_table=directory_result_output)
 
 
 
