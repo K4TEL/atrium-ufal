@@ -35,7 +35,7 @@ class ImageFolderCustom(torch.utils.data.Dataset):
     def __init__(self, targ_dir: str, seed: int, max_category_samples: int | None,
                  img_size: int, preprocess_fn: callable = None, model_name: str = "ViT",
                  ignore_dir: str = None, use_advanced_split: bool = True, split_type: str = 'train',
-                 file_format: str = "png", test_ratio: float = 0.1) -> None:
+                 file_format: str = "png", test_ratio: float = 0.1, safety: bool = True) -> None:
         self.targ_dir = targ_dir
         self.max_category_samples = max_category_samples
         self.preprocess = preprocess_fn
@@ -49,6 +49,7 @@ class ImageFolderCustom(torch.utils.data.Dataset):
         self.seed_random = seed
         self.file_format = file_format
         self.eval_ratio = test_ratio
+        self.safe_load = safety
 
         all_categories = sorted(entry.name for entry in os.scandir(targ_dir) if entry.is_dir())
 
@@ -86,38 +87,81 @@ class ImageFolderCustom(torch.utils.data.Dataset):
         if self.use_advanced_split:
             from classifier import CLIP, split_data_80_10_10
 
-            print(f"Using advanced split_data_80_10_10 for {split_type} set")
-            train_files, val_files, test_files, train_labels, val_labels, test_labels = split_data_80_10_10(
-                files=self.paths,
-                labels=self.targets,
-                random_seed=self.seed_random,
-                max_categ=self.max_category_samples if self.max_category_samples else 15000,
-                safe_check=True,
-            )
+            print(f"\tadvanced split_data_80_10_10 for\t{split_type}\tset")
 
-            time_stamp = time.strftime("%Y%m%d-%H%M")
-            # record datasets
-            out_filename = f"result/stats/{time_stamp}_{model_name}_{self.seed_random}_DATASETS.txt"
-            features =  "_".join(out_filename.split("_")[1:])
+            max_categ_str = f"{self.max_category_samples}c" if self.max_category_samples else "full"
+            consistent_filename = f"{model_name.replace('.', '')}_{max_categ_str}_{self.seed_random}r_DATASETS.txt"
+            out_filename = Path("result/stats") / consistent_filename
 
-            # check whether a file with the same ending exists already or not
-            existing_files = list(Path("result/stats").glob(f"*_{features}"))
-            if len(existing_files) > 0:
-                print(f"Warning: A dataset file with the same settings already exists: {existing_files[0].name}.")
-                print("Skipping recording dataset splits to avoid overwriting.")
+            # Check for an existing, consistent split file
+            existing_file = next((f for f in Path("result/stats").glob(f"*{consistent_filename}")), None)
+
+            train_files, val_files, test_files = [], [], []
+            train_labels, val_labels, test_labels = [], [], []
+
+            if existing_file:
+                print(f"Found existing dataset split file:\t{existing_file.name}.")
+                # Load paths and labels from the existing file
+                split_data = {'train': [], 'val': [], 'test': []}
+                current_split = None
+
+                with open(existing_file, "r") as f:
+                    for line in f:
+                        line = line.strip()
+                        if line.startswith("Training set"):
+                            current_split = 'train'
+                        elif line.startswith("Validation set"):
+                            current_split = 'val'
+                        elif line.startswith("Test set"):
+                            current_split = 'test'
+                        elif line and current_split:
+                            split_data[current_split].append(Path(line))
+
+                # Helper to convert paths to labels
+                def map_paths_to_labels(path_list, class_to_idx):
+                    labels = []
+                    for path in path_list:
+                        # Find the category name from the parent directory
+                        category_name = path.parent.name
+                        labels.append(class_to_idx[category_name])
+                    return np.array(labels)  # Convert to numpy array as split_data_80_10_10 returns numpy arrays
+
+                train_files = np.array(split_data['train'])
+                val_files = np.array(split_data['val'])
+                test_files = np.array(split_data['test'])
+
+                train_labels = map_paths_to_labels(split_data['train'], self.class_to_idx)
+                val_labels = map_paths_to_labels(split_data['val'], self.class_to_idx)
+                test_labels = map_paths_to_labels(split_data['test'], self.class_to_idx)
+
             else:
-                print(f"Recording dataset splits to {out_filename}")
+                # Run the split logic if no file exists
+                print("No existing split file found\tRunning randomized split and saving.")
+                train_files, val_files, test_files, train_labels, val_labels, test_labels = split_data_80_10_10(
+                    files=self.paths,
+                    labels=self.targets,
+                    random_seed=self.seed_random,
+                    max_categ=self.max_category_samples if self.max_category_samples else 15000,
+                    safe_check=self.safe_load,
+                )
+
+                # Save the new split to the consistent file name
+                out_filename.parent.mkdir(parents=True, exist_ok=True)
+                print(f"\tRecording dataset splits to {out_filename}")
                 with open(out_filename, "w") as f:
+                    # Note: Using train_files for the 'Test set' size in the original code is a BUG!
+                    # It should be len(test_files)
                     f.write(f"Training set ({len(train_files)} images):\n")
                     for file in train_files:
                         f.write(f"{file}\n")
                     f.write(f"\nValidation set ({len(val_files)} images):\n")
                     for file in val_files:
                         f.write(f"{file}\n")
-                    f.write(f"\nTest set ({len(train_files)} images):\n")
-                    for file in train_files:
+                    f.write(f"\nTest set ({len(test_files)} images):\n")  # CORRECTED BUG: Used len(test_files)
+                    for file in test_files:  # Used test_files
                         f.write(f"{file}\n")
 
+            print(f"train / val / test subset sizes:\t{len(train_files)} / {len(val_files)} / {len(test_files)}")
             if split_type == 'train':
                 self.paths = train_files.tolist()
                 self.targets = train_labels.tolist()
@@ -127,7 +171,7 @@ class ImageFolderCustom(torch.utils.data.Dataset):
             elif split_type == 'test':
                 self.paths = test_files.tolist()
                 self.targets = test_labels.tolist()
-        else:
+        # else:
             # Original simple split
             # (paths, _, labels, _) = train_test_split(
             #     np.array(self.paths),
@@ -137,10 +181,10 @@ class ImageFolderCustom(torch.utils.data.Dataset):
             #     stratify=np.array(self.targets)
             # )
             # No split, whole data is used for training
-            self.paths = self.paths
-            self.targets = self.targets
+            # self.paths = self.paths
+            # self.targets = self.targets
 
-        print(f"Total images in {split_type} set: {len(self.paths)}")
+        print(f"\t{split_type}'s set images loaded: {len(self.paths)}")
 
     def load_image(self, index: int) -> Image.Image:
         image_path = self.paths[index]
@@ -302,7 +346,7 @@ def evaluate_multiple_models(model_dir: str, eval_dir: str, device: str, cat_pre
     :param test_fraction: Fraction of data to use for testing if not using advanced split.
     :param device: Device to run the evaluation on (e.g., "cpu", "cuda").
     """
-    from classifier import CLIP, split_data_80_10_10
+    from classifier import CLIP
 
     map_base_name = {
         "ViTB32_": "ViT-B/32",

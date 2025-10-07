@@ -14,7 +14,7 @@ import torchmetrics
 import torchvision
 from torchvision import transforms
 from tqdm import tqdm
-import cli
+import clip
 from PIL import Image, ImageEnhance, ImageFilter
 
 from huggingface_hub import PyTorchModelHubMixin
@@ -36,7 +36,7 @@ class CLIP(nn.Module, PyTorchModelHubMixin):
                  max_category_samples: int | None,
                  eval_max_category_samples: int | None,
                  top_N: int,
-                 model_name: str,
+                 model_name: str, revision: str,
                  device: str,
                  seed: int,
                  test_ratio: float,
@@ -44,7 +44,10 @@ class CLIP(nn.Module, PyTorchModelHubMixin):
                  categories_tsv: str,
                  categories_dir: str,
                  output_dir: str = None,
+                 model_dir: str = None,
+                 cp_dir: str = None,
                  cat_prefix: str = None,
+                 safety_check: bool = True,
                  avg: bool = True,
                  zero_shot: bool = False):
         super().__init__()  # initialize nn.Module
@@ -59,12 +62,19 @@ class CLIP(nn.Module, PyTorchModelHubMixin):
 
         self.test_fraction = test_ratio
         self.file_format = input_format
+        self.safe_load = safety_check
+
+        print(f"Chosen file handling:\t{self.file_format} format \n\tSafety load of images:\t{self.safe_load}")
 
         self.output_dir = Path(__file__).parent / "result" if output_dir is None else Path(output_dir)
+        self.models_dir = Path(__file__).parent / "models" if model_dir is None else Path(model_dir)
+        self.checkpoints_dir = Path(__file__).parent / "model_checkpoints" if cp_dir is None else Path(cp_dir)
         self.download_root = '/lnet/work/projects/atrium/cache/clip'
 
+        self.model_code_name = f'{model_name.replace("/", "").replace("@", "-")}_{revision}'
+
         # Must set jit=False for training
-        self.model, self.preprocess = cli.load(model_name, device=device,
+        self.model, self.preprocess = clip.load(model_name, device=device,
                                                 download_root=self.download_root, jit=False)
 
         image_size = (self.preprocess.transforms[0].size, self.preprocess.transforms[0].size)
@@ -119,15 +129,16 @@ class CLIP(nn.Module, PyTorchModelHubMixin):
             else:
                 self.categories = [label for label, desc in loaded_cats]
                 self.texts = [desc for label, desc in loaded_cats]
-                self.text_inputs = torch.cat([cli.tokenize(f"a scan of {description}") for description in self.texts]).to(
+                self.text_inputs = torch.cat([clip.tokenize(f"a scan of {description}") for description in self.texts]).to(
                         device)
                 print(f"Categories: {self.categories} with single description per category.")
 
         self.model_name = model_name
 
         self.num_prediction_classes = len(self.categories)
-        print(f"Number of prediction classes: {self.num_prediction_classes}")
-        print(f"Model name: {self.model_name}")
+        print(f"\tNumber of prediction classes: {self.num_prediction_classes}")
+        print(f"\tModel name: {self.model_name}")
+        print(f"\tModel code name: {self.model_code_name}")
 
         self.categories_dir = categories_dir
         self.categories_tsv = categories_tsv
@@ -138,7 +149,7 @@ class CLIP(nn.Module, PyTorchModelHubMixin):
         with torch.no_grad():
             for category in self.categories:
                 descriptions = [f"a scan of {desc}" for desc in self.texts[category]]
-                tokens = torch.cat([cli.tokenize(desc) for desc in descriptions]).to(self.device)
+                tokens = torch.cat([clip.tokenize(desc) for desc in descriptions]).to(self.device)
                 features = self.model.encode_text(tokens)
                 features /= features.norm(dim=-1, keepdim=True)
                 mean_features = features.mean(dim=0)
@@ -146,20 +157,17 @@ class CLIP(nn.Module, PyTorchModelHubMixin):
                 all_features.append(mean_features)
         return torch.stack(all_features)
 
-    def train(self, train_dir: str, eval_dir: str, log_dir: str, num_epochs: int = 5, batch_size: int = 8,
-              learning_rate: float = 1e-7, save_interval: int = 1):
+    def train(self, train_dir: str, log_dir: str, eval_dir: str = None,
+              num_epochs: int = 5, batch_size: int = 8, learning_rate: float = 1e-7):
         """
         Fine-tunes the CLIP model based on the provided training and evaluation directories.
         """
-        print("Starting CLIP model fine-tuning...")
+        print("\t*\tStarting CLIP model fine-tuning...")
         torch.manual_seed(self.seed)
         random.seed(self.seed)
         np.random.seed(self.seed)
 
-        remove_punctuation = str.maketrans(string.punctuation, ' ' * len(string.punctuation))
-        model_name_sanitized = self.model_name.translate(remove_punctuation).replace(" ", "")
-
-        print(f"Current model name: \t{model_name_sanitized}")
+        print(f"\tCurrent model name (to save the trained weights as): \t{self.model_code_name}\n")
 
         def convert_models_to_fp32(model):
             for p in model.parameters():
@@ -170,15 +178,14 @@ class CLIP(nn.Module, PyTorchModelHubMixin):
         if self.device == "cpu":
             self.model.float()
         else:
-            cli.model.convert_weights(self.model)
+            clip.model.convert_weights(self.model)
 
         writer = SummaryWriter(log_dir=log_dir)
-        weights_path = Path("model_checkpoints")
-        weights_path.mkdir(exist_ok=True)
+        self.checkpoints_dir.mkdir(parents=True, exist_ok=True)
 
-        train_dataset = ImageFolderCustom(train_dir,
+        train_dataset = ImageFolderCustom(train_dir, model_name=self.model_code_name,
                                         max_category_samples=self.upper_category_limit,
-                                        preprocess_fn=self.preprocess,
+                                        preprocess_fn=self.preprocess, safety=self.safe_load,
                                         img_size=self.preprocess.transforms[0].size,
                                         use_advanced_split=True,  # Enable new split
                                         split_type='train', seed=self.seed,
@@ -191,9 +198,9 @@ class CLIP(nn.Module, PyTorchModelHubMixin):
         n_classes_for_sampler = min(batch_size, num_unique_classes)
 
         if n_classes_for_sampler < batch_size:
+            print(f"Warning:\tOnly {num_unique_classes} unique classes found in the training dataset.")
             # This warning helps explain why the effective batch size might be smaller than configured.
-            print(
-                f"Warning: Number of classes to sample in CLIP_BalancedBatchSampler reduced from {batch_size} to {n_classes_for_sampler}, as only {num_unique_classes} unique classes are available in the dataset.")
+            print(f"Warning:\tNumber of classes to be sampled per batch is reduced from {batch_size} to {n_classes_for_sampler}.")
 
         # Pass the capped value to the sampler
         # Since n_samples=1, the effective batch size will now be n_classes_for_sampler.
@@ -202,9 +209,9 @@ class CLIP(nn.Module, PyTorchModelHubMixin):
         # train_sampler = CLIP_BalancedBatchSampler(train_labels, batch_size, 1)
         train_dataloader = torch.utils.data.DataLoader(train_dataset, batch_sampler=train_sampler)
 
-        test_dataset = ImageFolderCustom(train_dir,
-                                          max_category_samples=self.upper_category_limit_eval,
-                                          preprocess_fn=self.preprocess,
+        test_dataset = ImageFolderCustom(train_dir, model_name=self.model_code_name,
+                                          max_category_samples=self.upper_category_limit,
+                                          preprocess_fn=self.preprocess, safety=self.safe_load,
                                           img_size=self.preprocess.transforms[0].size,
                                           use_advanced_split=True,  # Enable new split
                                           split_type='val', seed=self.seed,
@@ -223,13 +230,15 @@ class CLIP(nn.Module, PyTorchModelHubMixin):
         scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=num_epochs * num_batches_train,
                                                                eta_min=1e-10)
 
-        print(f"Number of training batches: \t{num_batches_train}")
-        print(f"Number of evaluation batches: \t{len(test_dataloader)}")
+        print(f"\ttraining batches: \t{num_batches_train}")
+        print(f"\tevaluation batches: \t{len(test_dataloader)}")
+
+        out_path = self.checkpoints_dir / f"model_{self.model_code_name}_{num_epochs}e.pt"
 
         ever_best_accuracy = 0.0
 
         for epoch in range(num_epochs):
-            print(f"Epoch: {epoch}/{num_epochs}")
+            print(f"\t*\tEpoch: {epoch+1}/{num_epochs}")
             epoch_train_loss, step = 0, 0
             self.model.train()
             for batch in tqdm(train_dataloader, total=num_batches_train, desc="Training"):
@@ -282,7 +291,7 @@ class CLIP(nn.Module, PyTorchModelHubMixin):
             avg_train_loss = epoch_train_loss / num_batches_train
             writer.add_scalar("Loss/train", avg_train_loss, epoch)
             writer.add_scalar("Learning Rate", optimizer.param_groups[0]['lr'], epoch)
-            print(f"{model_name_sanitized}\t Epoch {epoch} train loss: {avg_train_loss:.4f}")
+            print(f"\n{self.model_code_name}\t Epoch {epoch+1} train loss:\t{avg_train_loss:.4f}\n")
 
             if epoch == num_epochs - 1:
                 torch.save(
@@ -292,22 +301,21 @@ class CLIP(nn.Module, PyTorchModelHubMixin):
                         'optimizer_state_dict': optimizer.state_dict(),
                         'loss': avg_train_loss,
                         'rnd_data_seed': self.seed,
+                        'category_limit': self.upper_category_limit,
                     },
-                    weights_path / f"model_{model_name_sanitized}_{self.upper_category_limit}c_{str(learning_rate)}_{num_epochs}e.pt")
-                print(
-                    f"Saved weights to {weights_path}/model_{model_name_sanitized}_{self.upper_category_limit}c_{str(learning_rate)}_{num_epochs}e.pt.")
+                    out_path)
+                print(f"Saved weights to {out_path}")
 
             # Evaluation
             self.model.eval()
 
-            # Fix: Use the correct number of classes for torchmetrics
             if self.avg:
                 num_classes = len(self.categories)  # Use self.categories when avg=True
             else:
                 num_classes = len(test_dataset.classes)  # Use dataset classes when avg=False
 
             acc_top1_metric = torchmetrics.Accuracy(task="multiclass", num_classes=num_classes).to(self.device)
-            acc_top5_metric = torchmetrics.Accuracy(task="multiclass", num_classes=num_classes, top_k=5).to(self.device)
+            acc_top3_metric = torchmetrics.Accuracy(task="multiclass", num_classes=num_classes, top_k=3).to(self.device)
 
             # For evaluation, always use ALL pre-computed text features
             if self.avg:
@@ -316,7 +324,7 @@ class CLIP(nn.Module, PyTorchModelHubMixin):
                                                                                   keepdim=True)  # Ensure normalized
             else:
                 # Original logic for non-averaged categories
-                all_texts = torch.cat([cli.tokenize(f"a scan of {c}") for c in self.texts]).to(self.device)
+                all_texts = torch.cat([clip.tokenize(f"a scan of {c}") for c in self.texts]).to(self.device)
                 with torch.no_grad():
                     text_features_eval = self.model.encode_text(all_texts)
                     text_features_eval = text_features_eval / text_features_eval.norm(dim=-1, keepdim=True)
@@ -332,10 +340,10 @@ class CLIP(nn.Module, PyTorchModelHubMixin):
                     similarity = (100.0 * image_features @ text_features_eval.T)
 
                     acc_top1_metric.update(similarity, class_ids)
-                    acc_top5_metric.update(similarity, class_ids)
+                    acc_top3_metric.update(similarity, class_ids)
 
             mean_top1_accuracy = acc_top1_metric.compute()
-            mean_top5_accuracy = acc_top5_metric.compute()
+            mean_top3_accuracy = acc_top3_metric.compute()
 
             if mean_top1_accuracy > ever_best_accuracy:
                 ever_best_accuracy = mean_top1_accuracy
@@ -346,24 +354,40 @@ class CLIP(nn.Module, PyTorchModelHubMixin):
                         'optimizer_state_dict': optimizer.state_dict(),
                         'loss': avg_train_loss,
                         'rnd_data_seed': self.seed,
-                    },
-                    weights_path / f"model_{model_name_sanitized}_{self.upper_category_limit}c_{str(learning_rate)}_cp.pt")
+                        'category_limit': self.upper_category_limit,
+                    }, out_path)
                 print(
-                    f"Saved checkpoint weights to {weights_path}/model_{model_name_sanitized}_{self.upper_category_limit}c_{str(learning_rate)}_cp.pt.")
+                    f"\tSaved checkpoint weights to {out_path}")
 
             print(f"Mean Top 1 Accuracy: {mean_top1_accuracy.item() * 100:.2f}%.")
-            print(f"Mean Top 5 Accuracy: {mean_top5_accuracy.item() * 100:.2f}%.")
+            print(f"Mean Top 3 Accuracy: {mean_top3_accuracy.item() * 100:.2f}%.")
             writer.add_scalar("Test Accuracy/Top1", mean_top1_accuracy, epoch)
-            writer.add_scalar("Test Accuracy/Top5", mean_top5_accuracy, epoch)
+            writer.add_scalar("Test Accuracy/Top3", mean_top3_accuracy, epoch)
 
             acc_top1_metric.reset()
-            acc_top5_metric.reset()
+            acc_top3_metric.reset()
 
         writer.flush()
         writer.close()
-        print("Fine-tuning finished.")
+        print(f"\t*\tFine-tuning of {self.model_code_name} is finished.")
 
-        self.test(test_dataloader)
+        if not Path(self.models_dir).is_dir():
+            os.makedirs(self.models_dir, exist_ok=True)
+        self.save_model(str(self.models_dir))
+
+        test_dataset = ImageFolderCustom(train_dir if eval_dir is None else eval_dir,
+                                         model_name=self.model_code_name,
+                                         max_category_samples=self.upper_category_limit,
+                                         preprocess_fn=self.preprocess,
+                                         img_size=self.preprocess.transforms[0].size,
+                                         use_advanced_split=(eval_dir is None),  # Enable new split
+                                         split_type='test', seed=self.seed,
+                                         file_format=self.file_format,
+                                         test_ratio=self.test_fraction)
+
+        test_dataloader = torch.utils.data.DataLoader(test_dataset, batch_size=batch_size)
+
+        self.test(test_dataloader, image_files=test_dataset.paths)
 
     def evaluate_saved_model(self, model_path: str, eval_dir: str, batch_size: int = 8):
         """
@@ -373,16 +397,18 @@ class CLIP(nn.Module, PyTorchModelHubMixin):
             print(f"Loading model from {model_path} for evaluation...")
             checkpoint = torch.load(model_path, map_location=self.device)
             self.model.load_state_dict(checkpoint['model_state_dict'])
-            print(f"Model loaded from epoch {checkpoint['epoch']} with loss {checkpoint['loss']:.4f}.")
+            print(f"Model loaded from epoch {checkpoint['epoch']+1} with loss {checkpoint['loss']:.4f}.")
+
+        model_name = Path(model_path).stem if model_path is not None else self.model_code_name
 
         eval_dataset = ImageFolderCustom(eval_dir, max_category_samples=self.upper_category_limit_eval,
                                          preprocess_fn=self.preprocess, img_size=self.preprocess.transforms[0].size,
-                                         file_format=self.file_format, use_advanced_split=False, test_ratio=self.test_fraction,
-                                         split_type='test', seed=self.seed, model_name=self.model_name)
+                                         file_format=self.file_format, use_advanced_split=False,
+                                         split_type='test', seed=self.seed, model_name=model_name)
         eval_dataloader = torch.utils.data.DataLoader(eval_dataset, batch_size=batch_size)
 
         print("Starting evaluation of the loaded model...")
-        self.test(eval_dataloader, image_files=eval_dataset.paths,)
+        self.test(eval_dataloader, image_files=eval_dataset.paths)
         print("Evaluation finished.")
 
     def top_N_prediction(self, image_data: torch.Tensor, N: int):
@@ -420,22 +446,21 @@ class CLIP(nn.Module, PyTorchModelHubMixin):
         scores, indices, _ = self.top_N_prediction(image_data.unsqueeze(0), len(self.categories))
         return scores, indices[0]
 
-    def test(self, test_dataloader: torch.utils.data.DataLoader, model_name_sanitized: str = None,
-             vis: bool = True, tab: bool = True, image_files: list = []):
+    def test(self, test_dataloader: torch.utils.data.DataLoader, image_files: list,
+             vis: bool = True, tab: bool = True):
         """
         Evaluates the model on the provided test dataloader and generates a confusion matrix plot.
         :param test_dataloader:
+        :param vis:
         :return:
         """
-        remove_punctuation = str.maketrans(string.punctuation, ' ' * len(string.punctuation))
-        model_name_sanitized = self.model_name.translate(remove_punctuation).replace(" ", "") if model_name_sanitized is None else model_name_sanitized
 
         plot_path = Path(f'{self.output_dir}/plots')
         table_path = Path(f'{self.output_dir}/tables')
         plot_path.mkdir(parents=True, exist_ok=True)
         time_stamp = time.strftime("%Y%m%d-%H%M")
-        plot_image = plot_path / f'{time_stamp}_EVAL_conf_{self.top_N}n_{self.upper_category_limit}c_{model_name_sanitized}.png'
-        table_file = table_path / f'{time_stamp}_EVAL_table_{self.top_N}n_{self.upper_category_limit}c_{model_name_sanitized}.csv'
+        plot_image = plot_path / f'{time_stamp}_EVAL_conf_{self.top_N}n_{self.upper_category_limit}c_{self.model_code_name}.png'
+        table_file = table_path / f'{time_stamp}_EVAL_table_{self.top_N}n_{self.upper_category_limit}c_{self.model_code_name}.csv'
 
         all_pred_scores = []
         all_predictions = []
@@ -451,12 +476,11 @@ class CLIP(nn.Module, PyTorchModelHubMixin):
             # The `test_dataloader.dataset.texts` is not directly accessible if not `self.avg`.
             # Instead, use the `self.texts` which holds all descriptions.
             all_texts = torch.cat(
-                [cli.tokenize(f"a scan of {c}") for c in self.texts]).to(self.device)
+                [clip.tokenize(f"a scan of {c}") for c in self.texts]).to(self.device)
             with torch.no_grad():
                 text_features_test = self.model.encode_text(all_texts)
                 text_features_test /= text_features_test.norm(dim=-1, keepdim=True)
 
-        images = []
         with torch.no_grad():
             for images, class_ids in tqdm(test_dataloader, desc="Testing"):
                 images = images.to(self.device)
@@ -474,7 +498,13 @@ class CLIP(nn.Module, PyTorchModelHubMixin):
                 # images.append(images.cpu().numpy())
 
         acc = round(100 * np.sum(np.array(all_predictions) == np.array(all_true_labels)) / len(all_true_labels), 2)
-        print('Accuracy: ', acc)
+        print('\t*\tAccuracy: ', acc)
+
+        all_pred_scores = np.vstack(all_pred_scores)
+
+        # max_logits = np.max(all_pred_scores, axis=1, keepdims=True)
+        # exp_logits = np.exp(all_pred_scores - max_logits)
+        # all_pred_probs = exp_logits / np.sum(exp_logits, axis=1, keepdims=True)
 
         if vis:
             # Ensure display labels match the order of predictions
@@ -490,7 +520,7 @@ class CLIP(nn.Module, PyTorchModelHubMixin):
             disp.ax_.set_xticks(tick_positions)
             disp.ax_.set_xticklabels(short_labels)
 
-            disp.ax_.set_title(f"TOP {self.top_N} {self.upper_category_limit_eval}c {self.model_name} CM")
+            disp.ax_.set_title(f"TOP {self.top_N} {self.model_code_name} CM")
             plt.savefig(plot_image, bbox_inches='tight', dpi=300)
             plt.close()
             print(f"Confusion matrix saved to {plot_image}")
@@ -502,7 +532,7 @@ class CLIP(nn.Module, PyTorchModelHubMixin):
             out_df["TRUE"] = [self.categories[i] for i in all_true_labels]
             out_df.sort_values(['FILE', 'PAGE'], ascending=[True, True], inplace=True)
             out_df.to_csv(table_file, sep=",", index=False)
-            print(f"Results for TOP-{self.top_N} predictions are recorded into {self.output_dir}/tables/ directory")
+            print(f"Results for TOP-{self.top_N} predictions are recorded into {self.output_dir}/tables/ directory:\n{table_file}")
 
         return acc
 
@@ -703,15 +733,171 @@ class CLIP(nn.Module, PyTorchModelHubMixin):
         out_df.sort_values(['FILE', 'PAGE'], ascending=[True, True], inplace=True)
 
         out_table = out_table if out_table is not None \
-            else f"{self.output_dir}/tables/{time_stamp}_result_{self.top_N}n_{self.model_name.replace('/', '')}.csv"
+            else f"{self.output_dir}/tables/{time_stamp}_result_{self.model_code_name}_TOP-{self.top_N}.csv"
         out_df.to_csv(out_table, sep=",", index=False)
         print(f"Results for TOP-{self.top_N} predictions are recorded into {self.output_dir}/tables/ directory")
 
         if raw:
             raw_df.sort_values(self.categories, ascending=[False] * len(self.categories), inplace=True)
-            raw_df.to_csv(f"{self.output_dir}/tables/{time_stamp}_RAW_{self.model_name.replace('/', '')}.csv", sep=",", index=False)
+            raw_df.to_csv(f"{self.output_dir}/tables/{time_stamp}_RAW_{self.model_code_name}.csv", sep=",", index=False)
             print(f"RAW Results are recorded into {self.output_dir}/tables/ directory")
 
+    def predict_directory_chunk(self, folder_path: str, raw: bool = False, out_table: str = None, chunk: int = 1000):
+        """
+        Predicts categories for all images in a directory and saves results to a CSV file.
+        If chunk > 0, results are saved every `chunk` images into the same CSV (append mode).
+        :param folder_path:
+        :param raw:
+        :param out_table:
+        :param chunk: number of images to process before flushing results to disk (0 or None => no chunking)
+        :return:
+        """
+
+        images = directory_scraper(Path(folder_path), self.file_format)
+        n_images = len(images)
+        print(f"Predicting {n_images} images from {folder_path}")
+
+        time_stamp = time.strftime("%Y%m%d-%H%M")  # for results files
+
+        # If user didn't pass an explicit out_table use default naming
+        out_table = out_table if out_table is not None \
+            else f"{self.output_dir}/tables/{time_stamp}_result_{self.model_code_name}_TOP-{self.top_N}.csv"
+
+        # Raw results file name (same pattern as before)
+        raw_out_table = f"{self.output_dir}/tables/{time_stamp}_RAW_{self.model_code_name}.csv"
+
+        # For non-chunking behavior we keep similar buffers to your original code
+        if not chunk:
+            res_list, raw_list, tru_images = [], [], []
+            for img_path in tqdm(images, desc="Predicting directory"):
+                try:
+                    image = Image.open(img_path)
+                    image_input = self.preprocess(image).unsqueeze(0).to(self.device)
+                    scores, indices, raw_scores = self.top_N_prediction(image_input, self.top_N)
+                    res_list.append(indices)
+                    if raw:
+                        raw_list.append(raw_scores.tolist())
+                    tru_images.append(img_path.name)
+                except Exception as e:
+                    print(f"Error processing file {img_path}: {e}")
+
+            if res_list:
+                res_array = np.concatenate(res_list, axis=0)
+            else:
+                res_array = np.empty((0, self.top_N), dtype=int)
+
+            out_df, raw_df = dataframe_results(test_images=tru_images, test_predictions=res_array,
+                                               raw_scores=raw_list, top_N=self.top_N, categories=self.categories)
+
+            out_df.sort_values(['FILE', 'PAGE'], ascending=[True, True], inplace=True)
+
+            # ensure output directory exists
+            os.makedirs(os.path.dirname(out_table), exist_ok=True)
+            out_df.to_csv(out_table, sep=",", index=False)
+            print(f"Results for TOP-{self.top_N} predictions are recorded into {self.output_dir}/tables/ directory")
+
+            if raw:
+                raw_df.sort_values(self.categories, ascending=[False] * len(self.categories), inplace=True)
+                raw_df.to_csv(raw_out_table, sep=",", index=False)
+                print(f"RAW Results are recorded into {self.output_dir}/tables/ directory")
+
+            return
+
+        # --- Chunking / incremental write mode ---
+        # chunk > 0 here
+        os.makedirs(os.path.dirname(out_table), exist_ok=True)
+
+        chunk_images, chunk_res_list, chunk_raw_list = [], [], []
+        wrote_header = False
+        processed = 0
+
+        for img_path in tqdm(images, desc="Predicting directory"):
+            try:
+                image = Image.open(img_path)
+                image_input = self.preprocess(image).unsqueeze(0).to(self.device)
+                scores, indices, raw_scores = self.top_N_prediction(image_input, self.top_N)
+
+                chunk_images.append(img_path.name)
+                chunk_res_list.append(indices)  # indices expected to be something concatenable along axis=0
+                if raw:
+                    chunk_raw_list.append(raw_scores.tolist())
+
+                processed += 1
+
+                # flush when we have chunk images (or on last iteration below)
+                if processed % chunk == 0:
+                    # prepare arrays/lists for dataframe_results
+                    if chunk_res_list:
+                        chunk_res_array = np.concatenate(chunk_res_list, axis=0)
+                    else:
+                        chunk_res_array = np.empty((0, self.top_N), dtype=int)
+
+                    out_df_chunk, raw_df_chunk = dataframe_results(test_images=chunk_images,
+                                                                   test_predictions=chunk_res_array,
+                                                                   raw_scores=chunk_raw_list,
+                                                                   top_N=self.top_N, categories=self.categories)
+
+                    # append chunk to CSV
+                    mode = 'w' if not wrote_header else 'a'
+                    header = not wrote_header
+                    out_df_chunk.to_csv(out_table, sep=",", index=False, mode=mode, header=header)
+                    wrote_header = True
+                    print(f"Flushed {processed} images -> {out_table}")
+
+                    if raw:
+                        # append raw chunk to raw_out_table (sort later)
+                        mode_raw = 'w' if not os.path.exists(raw_out_table) else 'a'
+                        header_raw = not os.path.exists(raw_out_table)
+                        raw_df_chunk.to_csv(raw_out_table, sep=",", index=False, mode=mode_raw, header=header_raw)
+
+                    # reset chunk buffers
+                    chunk_images, chunk_res_list, chunk_raw_list = [], [], []
+
+            except Exception as e:
+                print(f"Error processing file {img_path}: {e}")
+
+        # flush remaining images (if any)
+        if chunk_images:
+            if chunk_res_list:
+                chunk_res_array = np.concatenate(chunk_res_list, axis=0)
+            else:
+                chunk_res_array = np.empty((0, self.top_N), dtype=int)
+
+            out_df_chunk, raw_df_chunk = dataframe_results(test_images=chunk_images,
+                                                           test_predictions=chunk_res_array,
+                                                           raw_scores=chunk_raw_list,
+                                                           top_N=self.top_N, categories=self.categories)
+
+            mode = 'w' if not wrote_header else 'a'
+            header = not wrote_header
+            out_df_chunk.to_csv(out_table, sep=",", index=False, mode=mode, header=header)
+            print(f"Flushed final {processed} images -> {out_table}")
+
+            if raw:
+                mode_raw = 'w' if not os.path.exists(raw_out_table) else 'a'
+                header_raw = not os.path.exists(raw_out_table)
+                raw_df_chunk.to_csv(raw_out_table, sep=",", index=False, mode=mode_raw, header=header_raw)
+
+        # Final pass: read entire CSV, sort, and re-write so final file is sorted like original behavior
+        try:
+            final_out = pd.read_csv(out_table)
+            if {'FILE', 'PAGE'}.issubset(final_out.columns):
+                final_out.sort_values(['FILE', 'PAGE'], ascending=[True, True], inplace=True)
+            final_out.to_csv(out_table, sep=",", index=False)
+            print(f"Final sorted results written to {out_table}")
+        except Exception as e:
+            print(f"Warning: could not reload/sort final output file {out_table}: {e}")
+
+        if raw:
+            try:
+                final_raw = pd.read_csv(raw_out_table)
+                # original behavior sorts raw_df by categories descending
+                if all(c in final_raw.columns for c in self.categories):
+                    final_raw.sort_values(self.categories, ascending=[False] * len(self.categories), inplace=True)
+                final_raw.to_csv(raw_out_table, sep=",", index=False)
+                print(f"Final RAW results written to {raw_out_table}")
+            except Exception as e:
+                print(f"Warning: could not reload/sort final RAW file {raw_out_table}: {e}")
 
 
 def split_data_80_10_10(files: list, labels: list, random_seed: int, max_categ: int,

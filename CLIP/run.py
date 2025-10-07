@@ -50,7 +50,7 @@ if __name__ == "__main__":
     # setting main to latest version by default
     # hf_version = hf_version if hf_version != 'main' else config.get('HF', 'latest')
 
-    model_name_local = f"{base_model.replace('/', '')}_rev_{hf_version.replace('.', '')}"
+    model_name_local = f"{base_model.replace('/', '').replace('@', '-')}_rev_{hf_version.replace('.', '')}"
     hf_models_directory = config.get('OUTPUT', 'FOLDER_MODELS')
     model_path = Path(f"{hf_models_directory}/{model_name_local}")
 
@@ -64,7 +64,6 @@ if __name__ == "__main__":
     test_size = config.getfloat("TRAIN", "test_size")
     learning_rate = config.getfloat("TRAIN", "lr")
 
-    raw = config.getboolean('SETUP', 'raw')
     zero_shot = config.getboolean('SETUP', 'zero_shot')  # zero-shot prediction without training
     visualize = config.getboolean('SETUP', 'visualize')  # visualize model accuracy statistics
     download_root = config.get('SETUP', 'model_storage')  # root directory for downloading datasets
@@ -95,6 +94,8 @@ if __name__ == "__main__":
                         help="Maximum number of samples per category for training.")
     parser.add_argument('-mce', "--max_categ_eval", type=int, default=max_categ_e,
                         help="Maximum number of samples per category for evaluation.")
+    parser.add_argument("--safe", action="store_true", help="Safely load images skipping the corrupted ones.")
+
 
     # Category file arguments
     parser.add_argument('--cat_prefix', type=str, default=categ_prefix,
@@ -123,7 +124,7 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     input_dir = Path(test_dir) if args.directory is None else Path(args.directory)
-    Training, top_N, raw = args.train, args.topn, args.raw
+    Training, top_N, raw, safety = args.train, args.topn, args.raw, args.safe
 
     if args.revision is None: # using config file revision
         args.revision = hf_version
@@ -156,7 +157,7 @@ if __name__ == "__main__":
         ",".join(("{}={}".format(re.sub("(.)[^_]*_?", r"\1", k), v) for k, v in sorted(vars(args).items()) if v
                   is not None and k not in (
                       "file", "directory", "dir", "eval", "train", "model_path", "model", "cat_prefix", "model_dir",
-                      "eval_dir", "vis")))
+                      "eval_dir", "vis", "raw", "safe", "cat_dir", "hf", "")))
     ))
 
     args.logdir += f"-{args.model.replace('/', '_')}" if args.model else ""
@@ -176,6 +177,7 @@ if __name__ == "__main__":
                          top_N=args.topn, model_name=args.model, device=device,
                          categories_tsv=categ_file, seed=seed, input_format=input_format,
                          output_dir=str(output_dir), categories_dir=cat_directory,
+                         model_dir=str(model_path), cp_dir=str(cp_dir), revision=args.revision.replace('.', ''),
                          cat_prefix=args.cat_prefix, avg=args.avg, zero_shot=args.zero_shot)
 
     data_dir = config.get("TRAIN", "FOLDER_PAGES")
@@ -184,8 +186,14 @@ if __name__ == "__main__":
     categories = def_categ
     print(f"Category input directories found: {categories}")
 
+    model_name_local = f"model_{args.model.replace('/', '').replace('@', '-')}_rev_{args.revision.replace('.', '')}"
+    model_path = Path(cp_dir.parent / args.model_dir / model_name_local)
+    model_cp_path = Path(cp_dir / f"{model_name_local}_{args.epochs}e.pt")
+
+    print(f"Working with a local folder \t{model_path}")
+    print(f"Model checkpoints folder \t{model_cp_path}")
+
     if args.hf:
-        weights_path = Path("model_checkpoints")
 
         # -------------------------------------------------------------
         # ----- UNCOMMENT for saving trained model in HF format -------
@@ -213,9 +221,8 @@ if __name__ == "__main__":
         # -------------------------------------------------------------
 
         # saving model to local path
-        model_name_local = f"{args.model.replace('/', '')}_rev_{args.revision.replace('.', '')}"
-        model_path = Path(weights_path.parent / args.model_dir / model_name_local)
-
+        model_name_local = f"model_{args.model.replace('/', '').replace('@', '-')}_rev_{args.revision.replace('.', '')}"
+        model_path = Path(cp_dir.parent / args.model_dir / model_name_local)
 
         # ----------------------------------------------
         # ----- UNCOMMENT for saving in HF format -------
@@ -236,8 +243,7 @@ if __name__ == "__main__":
         #                              config.get("HF", "revision"))
         # ----------------------------------------------
 
-        # raise NotImplementedError
-        #
+
         # loading from repo
         clip_instance.load_from_hub(config.get("HF", "repo_name"), args.revision)
 
@@ -257,11 +263,11 @@ if __name__ == "__main__":
 
         clip_instance.train(
             train_dir=data_dir,
-            eval_dir=data_dir_eval,
+            eval_dir=data_dir_eval if args.eval else None,
             log_dir=args.logdir,
             num_epochs=args.epochs,
             learning_rate=args.lr,
-            batch_size=args.batch_size
+            batch_size=args.batch_size,
         )
     elif args.vis:
         csv = output_dir / 'stats' / f"model_accuracies{'_zero' if args.zero_shot else ''}.csv"
@@ -270,25 +276,25 @@ if __name__ == "__main__":
         else:
             visualize_results(str(csv), str(output_dir / 'stats'), args.zero_shot)
 
+
     if args.eval:
-        weights_path = Path("model_checkpoints")
         if args.zero_shot:
             model_path_str = None
         else:
             model_path_str = args.model_path
             print(f"Model path provided: {model_path_str}")
             if model_path_str is None:
-                remove_punctuation = str.maketrans(string.punctuation, ' ' * len(string.punctuation))
-                model_name_sanitized = args.model.translate(remove_punctuation).replace(" ", "")
-                model_path = weights_path / f"model_{model_name_sanitized}_{args.max_categ}c_{str(args.lr)}.pt"
-                if not model_path.exists():
-                    model_path = weights_path / f"model_{model_name_sanitized}_{args.max_categ}c_{str(args.lr)}_cp.pt"
+                if model_cp_path.is_file():
+                    model_path_str = str(model_cp_path)
+                else:
+                    model_cp_path = Path(str(model_cp_path).replace("e.pt", "e.cp.pt"))
 
-                if not model_path.exists():
-                    raise ValueError(
-                        "Model file or checkpoint not found at default paths. Please provide a path using --model_path.")
+                    if not model_cp_path.is_file():
+                        raise ValueError(
+                            f"Model file or checkpoint {model_cp_path} are not found at default paths. Please provide a path using --model_path.")
+                    else:
+                        model_path_str = str(model_cp_path)
 
-            model_path_str = str(weights_path / model_path_str)
 
         if not os.path.isdir(data_dir_eval):
             print(f"Warning: Evaluation directory not found at: {data_dir_eval}. Using training directory for evaluation.")
@@ -329,8 +335,8 @@ if __name__ == "__main__":
             input_dir_pred = Path(args.directory) if args.directory is not None else cur / 'test-images' / 'pages'
             table_out_path = output_dir / 'tables'
             table_out_path.mkdir(exist_ok=True, parents=True)
-            directory_result_output = str(table_out_path / f'{time_stamp}zero_shot_raw_result_{args.model.replace("/", "")}_{args.topn}n_{max_categ}c.csv')
-            clip_instance.predict_directory(str(input_dir_pred), raw=True, out_table=directory_result_output)
+            directory_result_output = str(table_out_path / f'{time_stamp}_zero_shot_{"raw" if raw else ""}_result_{model_name_local}_TOP-{args.topn}.csv')
+            clip_instance.predict_directory(str(input_dir_pred), raw=raw, out_table=directory_result_output)
         else:
             print("Please specify a file (-f) or a directory (-d) for zero-shot prediction.")
     else:
@@ -347,8 +353,8 @@ if __name__ == "__main__":
         if args.dir or args.directory is not None:
             table_out_path = output_dir / 'tables'
             table_out_path.mkdir(exist_ok=True, parents=True)
-            directory_result_output = str(table_out_path / f'{time_stamp}_result_{args.model.replace("/", "")}_{args.topn}n_{max_categ}c.csv')
-            clip_instance.predict_directory(str(input_dir), raw=True, out_table=directory_result_output)
+            directory_result_output = str(table_out_path / f'{time_stamp}_result_{model_name_local}_TOP-{args.topn}.csv')
+            clip_instance.predict_directory(str(input_dir), raw=raw, out_table=directory_result_output)
 
 
 
