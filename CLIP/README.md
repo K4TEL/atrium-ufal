@@ -83,6 +83,11 @@ paper source into one of the categories - each responsible for the following con
 > or structured in tabular 📏 format text, as well as to mark the presence of the printed 🌄 or drawn 📈 graphic 
 > materials yet to be extracted from the page images.
 
+![comparison_graph.png](model_acc_compared.png)
+
+The figure above shows accuracy and parameters comparison of different base models tested on the same data. The figure 
+demonstrates best models overall (above the trendline).
+
 ### Data 📜
 
 The dataset is provided under Public Domain license, and consists of **15855** PNG images of pages from the archival documents.
