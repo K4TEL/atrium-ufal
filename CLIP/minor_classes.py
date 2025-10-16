@@ -262,8 +262,8 @@ def visualize_results(csv_file: str, output_dir: str, zero_shot: bool = False):
     :param base_model_colors: Dictionary to map base model names to specific colors.
     """
     base_model_colors = {
-        "ViT-B/32 ": "steelblue",
-        "ViT-B/16 ": "indigo",
+        "ViT-B/32 ": "indigo",
+        "ViT-B/16 ": "steelblue",
         "ViT-L/14 ": "orange",
         "ViT-L/14-336 ": "gold"
     }
@@ -315,7 +315,7 @@ def visualize_results(csv_file: str, output_dir: str, zero_shot: bool = False):
     plt.tight_layout()
 
     # set min-max y-axis values
-    plt.ylim(results_df['accuracy'].min()-1, 100 if results_df['accuracy'].max() == 100 else results_df['accuracy'].max()+1)
+    plt.ylim(results_df['accuracy'].min()-0.1, 100 if results_df['accuracy'].max() == 100 else results_df['accuracy'].max()+0.1)
 
     # Save the plot
     plot_output_dir = Path(output_dir)

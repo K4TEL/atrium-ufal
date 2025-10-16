@@ -172,13 +172,14 @@ if __name__ == "__main__":
     output_dir.mkdir(exist_ok=True)
 
     cat_directory = str(cur / args.cat_dir)
-    clip_instance = CLIP(max_category_samples=args.max_categ, test_ratio=test_size,
-                         eval_max_category_samples=args.max_categ_eval,
-                         top_N=args.topn, model_name=args.model, device=device,
-                         categories_tsv=categ_file, seed=seed, input_format=input_format,
-                         output_dir=str(output_dir), categories_dir=cat_directory,
-                         model_dir=str(model_path), cp_dir=str(cp_dir), revision=args.revision.replace('.', ''),
-                         cat_prefix=args.cat_prefix, avg=args.avg, zero_shot=args.zero_shot)
+    if not args.vis:
+        clip_instance = CLIP(max_category_samples=args.max_categ, test_ratio=test_size,
+                             eval_max_category_samples=args.max_categ_eval,
+                             top_N=args.topn, model_name=args.model, device=device,
+                             categories_tsv=categ_file, seed=seed, input_format=input_format,
+                             output_dir=str(output_dir), categories_dir=cat_directory,
+                             model_dir=str(model_path), cp_dir=str(cp_dir), revision=args.revision.replace('.', ''),
+                             cat_prefix=args.cat_prefix, avg=args.avg, zero_shot=args.zero_shot)
 
     data_dir = config.get("TRAIN", "FOLDER_PAGES")
     data_dir_eval = config.get("EVAL", "FOLDER_PAGES")
