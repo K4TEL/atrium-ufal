@@ -303,7 +303,7 @@ if __name__ == "__main__":
             input_dir_pred = Path(args.directory) if args.directory is not None else cur / 'test-images' / 'pages'
             table_out_path = output_dir / 'tables'
             table_out_path.mkdir(exist_ok=True, parents=True)
-            directory_result_output = str(table_out_path / f'{time_stamp}_zero_shot_{"raw" if raw else ""}_result_{model_name_local}_TOP-{args.topn}.csv')
+            directory_result_output = str(table_out_path / f'{time_stamp}_zero_shot_{model_name_local}_TOP-{args.topn}.csv')
             clip_instance.predict_directory(str(input_dir_pred), raw=raw, out_table=directory_result_output)
         else:
             print("Please specify a file (-f) or a directory (-d) for zero-shot prediction.")

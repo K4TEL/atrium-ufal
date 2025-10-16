@@ -270,6 +270,7 @@ def visualize_results(csv_file: str, output_dir: str, zero_shot: bool = False):
 
     category_codes = {
         "average": 10,
+        "avg": 10,
         "detail": 2,  # 9
         "extra": 3,  # 8
         "gemini": 4,  # 6
@@ -304,18 +305,68 @@ def visualize_results(csv_file: str, output_dir: str, zero_shot: bool = False):
         lambda x: next((color for base, color in base_model_colors.items() if base in x), 'black')
     )
 
+    # Store base model for each entry (for legend)
+    results_df['base_model'] = results_df['model_name'].apply(
+        lambda x: next((base.strip() for base in base_model_colors.keys() if base in x), None)
+    )
+
+    # Create shortened labels by removing base model prefix
+    results_df['short_label'] = results_df.apply(
+        lambda row: row['model_name'].replace(row['base_model'] + ' ', '') if row['base_model'] else row['model_name'],
+        axis=1
+    )
+
     # Generate the bar plot
     plt.figure(figsize=(12, 7))
-    plt.bar(results_df['model_name'], results_df['accuracy'], color=results_df['color'])
+
+    # Plot bars individually (not stacked) and collect handles for legend
+    legend_handles = {}
+    bars = plt.bar(range(len(results_df)), results_df['accuracy'], color=results_df['color'])
+
+    for idx, row in results_df.iterrows():
+        if row['base_model'] and row['base_model'] not in legend_handles:
+            legend_handles[row['base_model']] = bars[list(results_df.index).index(idx)]
+
+    # Add values on top of each bar
+    for i, (idx, row) in enumerate(results_df.iterrows()):
+        plt.text(i, row['accuracy'], f"{row['accuracy']:.2f}",
+                 ha='center', va='bottom', fontsize=12, color='black')
+
+    # Add overall mean line
+    mean_accuracy = results_df['accuracy'].mean()
+    mean_line = plt.axhline(y=mean_accuracy, color='red', linestyle='--', linewidth=2, alpha=0.7)
+
+    # Add steelblue (ViT-B/16) mean line
+    if not zero_shot:
+        steelblue_df = results_df[results_df['color'] == 'steelblue']
+        if not steelblue_df.empty:
+            steelblue_mean = steelblue_df['accuracy'].mean()
+            steelblue_line = plt.axhline(y=steelblue_mean, color='black', linestyle='--', linewidth=2, alpha=0.7)
+
     plt.xlabel("Model Name")
     plt.ylabel("Top-1 Accuracy (%)")
-    plt.title("Model Accuracy Comparison")
-    plt.xticks(rotation=45, ha='right')
+    plt.title(f"Model {'zero_shot' if zero_shot else ''} Accuracy Comparison")
+    plt.xticks(range(len(results_df)), results_df['short_label'], rotation=45, ha='right')
     plt.grid(axis='y', linestyle='--', alpha=0.7)
+
+    # Create legend with base models and mean lines
+    legend_items = list(legend_handles.items())
+    legend_labels = [label for label, _ in legend_items]
+    legend_bars = [handle for _, handle in legend_items]
+    legend_labels.append(f'Overall Mean: {mean_accuracy:.2f}%')
+    legend_bars.append(mean_line)
+    if not zero_shot and not steelblue_df.empty:
+        legend_labels.append(f'ViT-B/16 Mean: {steelblue_mean:.2f}%')
+        legend_bars.append(steelblue_line)
+
+    plt.legend(legend_bars, legend_labels)
     plt.tight_layout()
 
+
+    offset = 0.1 if not zero_shot else 1
     # set min-max y-axis values
-    plt.ylim(results_df['accuracy'].min()-0.1, 100 if results_df['accuracy'].max() == 100 else results_df['accuracy'].max()+0.1)
+    plt.ylim(results_df['accuracy'].min() - offset,
+             100 if results_df['accuracy'].max() == 100 else results_df['accuracy'].max() + offset)
 
     # Save the plot
     plot_output_dir = Path(output_dir)
@@ -324,6 +375,7 @@ def visualize_results(csv_file: str, output_dir: str, zero_shot: bool = False):
     plt.savefig(plot_output_path, dpi=300)
     plt.close()
     print(f"Accuracy plot saved to {plot_output_path}")
+
 
 
 def evaluate_multiple_models(model_dir: str, eval_dir: str, categ_dir: str, device: str,
