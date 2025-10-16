@@ -270,13 +270,14 @@ def visualize_results(csv_file: str, output_dir: str, zero_shot: bool = False):
 
     category_codes = {
         "average": 10,
-        "detail": 9,  # 9
-        "extra": 8,  # 8
-        "gemini": 6,  # 6
-        "gpt": 4,  # 4
-        "mid": 2,  # 2
-        "min": 3,  # 3
-        "short": 5,  # 5
+        "detail": 2,  # 9
+        "extra": 3,  # 8
+        "gemini": 4,  # 6
+        "gpt": 5,  # 4
+        "large": 6,  # 4
+        "mid": 7,  # 2
+        "min": 8,  # 3
+        "short": 9,  # 5
         "init": 1,  # 1
     }
 
@@ -325,9 +326,9 @@ def visualize_results(csv_file: str, output_dir: str, zero_shot: bool = False):
     print(f"Accuracy plot saved to {plot_output_path}")
 
 
-def evaluate_multiple_models(model_dir: str, eval_dir: str, device: str, cat_prefix: str,
+def evaluate_multiple_models(model_dir: str, eval_dir: str, categ_dir: str, device: str,
                              upper_categ_limit: int, random_seed: int, img_size: int, input_format: str,
-                             model_suffix: str = "05.pt", vis: bool = True,
+                             model_suffix: str = "7e.pt", vis: bool = True, cat_prefix: str = "page_categories",
                              preprocess_func: callable = None, test_fraction: float = 0.1,
                              batch_size: int = 8, zero_shot: bool = False):
     """
@@ -349,22 +350,26 @@ def evaluate_multiple_models(model_dir: str, eval_dir: str, device: str, cat_pre
     from classifier import CLIP
 
     map_base_name = {
-        "ViTB32_": "ViT-B/32",
-        "ViTB16_": "ViT-B/16",
-        "ViTL14_": "ViT-L/14",
-        "ViTL14336px_": "ViT-L/14@336px",
+        "ViT-B32_rev_v12": "ViT-B/32",
+        "ViT-B16_rev_v11": "ViT-B/16",
+        "ViT-L14_rev_v21": "ViT-L/14",
+        "ViT-L14-336px_rev_v22": "ViT-L/14@336px",
     }
 
     category_sufix = {
-        "000c": "average",
-        "01c": "detail",  # 9
-        "02c": "extra",  # 8
-        "03c": "gemini",  # 6
-        "04c": "gpt",  # 4
-        "05c": "mid",  # 2
-        "06c": "min",  # 3
-        "07c": "short",  # 5
-        "08c": "init",  # 1
+        "113_": "average",
+        "123_": "average",
+        "213_": "average",
+        "223_": "average",
+        "31": "init",
+        "32": "detail",
+        "33": "extra",
+        "34": "gemini",
+        "35": "gpt",
+        "36": "large",
+        "37": "mid",
+        "38": "min",
+        "39": "short",
     }
 
     model_dir_path = Path(model_dir)
@@ -396,7 +401,7 @@ def evaluate_multiple_models(model_dir: str, eval_dir: str, device: str, cat_pre
                                      cat_prefix=cat_prefix, output_dir=str(output_dir), avg=True, zero_shot=False)
 
                 # Prepare evaluation dataset and dataloader once
-                eval_dataset = ImageFolderCustom(eval_dir, max_category_samples=upper_categ_limit,
+                eval_dataset = ImageFolderCustom(eval_dir, max_category_samples=None,
                                          preprocess_fn=preprocess_func, img_size=img_size,
                                          file_format=input_format, use_advanced_split=False, test_ratio=test_fraction,
                                          split_type='test', seed=random_seed, model_name=base_name)
@@ -431,11 +436,44 @@ def evaluate_multiple_models(model_dir: str, eval_dir: str, device: str, cat_pre
             else:
                 vis_model_name = f"{base_name.replace('@', '-')} {vis_categ}"
                 print(vis_model_name)
+
+                categories_tsv = f"{cat_prefix}_{vis_categ}.tsv"
+                if vis_categ == "average":
+                    categories_tsv = f"TOTAL_{cat_prefix}.tsv"
+                    model_use_avg = True
+                else:
+                    model_use_avg = False
+                categ_tsv_path = Path(__file__).parent / categ_dir / categories_tsv
+
+                model_revision = "main"
+                filename_parts = model_name_stem.split('_')
+                for i, part in enumerate(filename_parts):
+                    if part == "rev" and filename_parts[i+1].startswith('v'):
+                        model_revision = filename_parts[i+1]
+                        break
+
+                model_name = model_name_stem
+                for i, part in enumerate(filename_parts):
+                    if part == "model":
+                        model_name = filename_parts[i+1]
+                        break
+
+
+
                 try:
                     # Load model state dict
-                    clip_instance = CLIP(None, None, 1, base_name, device,
-                                         seed=random_seed, test_ratio=test_fraction, input_format=input_format,
-                                         cat_prefix=cat_prefix, output_dir=str(output_dir), avg=True, zero_shot=False)
+                    # clip_instance = CLIP(None, None, 1, base_name, device,
+                    #                      seed=random_seed, test_ratio=test_fraction, input_format=input_format,
+                    #                      cat_prefix=cat_prefix, output_dir=str(output_dir), avg=True, zero_shot=False)
+
+                    clip_instance = CLIP(max_category_samples=None, test_ratio=test_fraction,
+                                         eval_max_category_samples=None,
+                                         top_N=1, model_name=base_name, device=device,
+                                         categories_tsv=str(categ_tsv_path), seed=random_seed, input_format=input_format,
+                                         output_dir=str(output_dir), categories_dir=categ_dir,
+                                         model_dir=str(model_path),
+                                         revision=model_revision,
+                                         cat_prefix=cat_prefix, avg=model_use_avg, zero_shot=False)
 
                     # Prepare evaluation dataset and dataloader once
                     eval_dataset = ImageFolderCustom(eval_dir, max_category_samples=None, seed=random_seed,
@@ -449,7 +487,7 @@ def evaluate_multiple_models(model_dir: str, eval_dir: str, device: str, cat_pre
                     clip_instance.model.load_state_dict(checkpoint['model_state_dict'])
                     print(f"Model loaded from epoch {checkpoint['epoch']} with loss {checkpoint['loss']:.4f}.")
 
-                    accuracies[vis_model_name] = clip_instance.test(eval_dataloader, vis=False)
+                    accuracies[vis_model_name] = clip_instance.test(eval_dataloader, vis=False, image_files=eval_dataset.paths)
                     print(f"Top 1 Accuracy for {vis_model_name} {model_name_stem}: {accuracies[vis_model_name]:.2f}%")
 
                 except Exception as e:

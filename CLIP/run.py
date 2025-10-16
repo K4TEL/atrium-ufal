@@ -194,53 +194,19 @@ if __name__ == "__main__":
     print(f"Model checkpoints folder \t{model_cp_path}")
 
     if args.hf:
-
-        # -------------------------------------------------------------
-        # ----- UNCOMMENT for saving trained model in HF format -------
-        # -------------------------------------------------------------
-        # model_path_str = args.model_path
-        # print(f"Model path provided: {model_path_str}")
-        # if model_path_str is None:
-        #     remove_punctuation = str.maketrans(string.punctuation, ' ' * len(string.punctuation))
-        #     model_name_sanitized = args.model.translate(remove_punctuation).replace(" ", "")
-        #     model_path = weights_path / f"model_{model_name_sanitized}_{args.max_categ}c_{str(args.lr)}.pt"
-        #     if not model_path.exists():
-        #         model_path = weights_path / f"model_{model_name_sanitized}_{args.max_categ}c_{str(args.lr)}_cp.pt"
-        #
-        #     if not model_path.exists():
-        #         raise ValueError(
-        #             "Model file or checkpoint not found at default paths. Please provide a path using --model_path.")
-        #
-        # model_path_str = str(weights_path / model_path_str) if model_path_str else None
-        #
-        # if model_path_str is not None:
-        #     print(f"Loading model from {model_path_str} for evaluation...")
-        #     checkpoint = torch.load(model_path_str, map_location=device)
-        #     clip_instance.model.load_state_dict(checkpoint['model_state_dict'])
-        #     print(f"Model loaded from epoch {checkpoint['epoch']} with loss {checkpoint['loss']:.4f}.")
-        # -------------------------------------------------------------
-
         # saving model to local path
         model_name_local = f"model_{args.model.replace('/', '').replace('@', '-')}_rev_{args.revision.replace('.', '')}"
         model_path = Path(cp_dir.parent / args.model_dir / model_name_local)
 
         # ----------------------------------------------
-        # ----- UNCOMMENT for saving in HF format -------
-        # ----------------------------------------------
-        # if not model_path.is_dir():
-        #     os.makedirs(model_path, exist_ok=True)
-        # clip_instance.save_model(str(model_path))
-        # ----------------------------------------------
-
-        # clip_instance.load_model(str(model_path))
-        # ----------------------------------------------
         # ----- UNCOMMENT for pushing to HF repo -------
         # ----------------------------------------------
-        # create_branch(config.get("HF", "repo_name"), repo_type="model", branch=config.get("HF", "revision"),
-        #               exist_ok=True,
-        #               token=config.get("HF", "token"))
-        # clip_instance.pushing_to_hub(config.get("HF", "repo_name"), False, config.get("HF", "token"),
-        #                              config.get("HF", "revision"))
+        clip_instance.load_model(str(model_path), args.revision, seed)
+        create_branch(config.get("HF", "repo_name"), repo_type="model", branch=config.get("HF", "revision"),
+                      exist_ok=True,
+                      token=config.get("HF", "token"))
+        clip_instance.pushing_to_hub(config.get("HF", "repo_name"), False, config.get("HF", "token"),
+                                     config.get("HF", "revision"))
         # ----------------------------------------------
 
 
@@ -315,6 +281,7 @@ if __name__ == "__main__":
         evaluate_multiple_models(
             model_dir=args.model_dir,
             eval_dir=data_dir_eval,
+            categ_dir=cat_directory,
             batch_size=args.batch_size,
             device=device,
             cat_prefix=args.cat_prefix,

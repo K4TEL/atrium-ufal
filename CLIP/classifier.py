@@ -36,13 +36,14 @@ class CLIP(nn.Module, PyTorchModelHubMixin):
                  max_category_samples: int | None,
                  eval_max_category_samples: int | None,
                  top_N: int,
-                 model_name: str, revision: str,
+                 model_name: str,
+                 revision: str | None,
                  device: str,
                  seed: int,
-                 test_ratio: float,
-                 input_format: str,
                  categories_tsv: str,
-                 categories_dir: str,
+                 categories_dir: str = "./category_descriptions",
+                 test_ratio: float = 0.1,
+                 input_format: str = "jpeg",
                  output_dir: str = None,
                  model_dir: str = None,
                  cp_dir: str = None,
@@ -233,7 +234,7 @@ class CLIP(nn.Module, PyTorchModelHubMixin):
         print(f"\ttraining batches: \t{num_batches_train}")
         print(f"\tevaluation batches: \t{len(test_dataloader)}")
 
-        out_path = self.checkpoints_dir / f"model_{self.model_code_name}_{num_epochs}e.pt"
+        out_path = self.checkpoints_dir / f"model_{self.model_code_name.replace('_', '_rev_')}_{num_epochs}e.pt"
 
         ever_best_accuracy = 0.0
 
@@ -566,13 +567,15 @@ class CLIP(nn.Module, PyTorchModelHubMixin):
         self.save_pretrained(save_directory, config=configs)
         print(f"Model and configuration saved to {save_directory}")
 
-    def load_model(self, load_directory: str):
+    def load_model(self, load_directory: str, revision: str):
         """
         Load a fine-tuned model and its configuration from the specified directory using PyTorchModelHubMixin.
         """
         # The from_pretrained method of PyTorchModelHubMixin loads the model into the current instance.
         # It also handles loading the associated configuration.
         loaded_model = self.from_pretrained(load_directory,
+                                            revision=revision,
+                                            seed=self.seed,
                                             max_category_samples=self.upper_category_limit,
                                             eval_max_category_samples=self.upper_category_limit_eval,
                                             top_N=self.top_N,
