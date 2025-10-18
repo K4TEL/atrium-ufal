@@ -402,7 +402,7 @@ class CLIP(nn.Module, PyTorchModelHubMixin):
 
         model_name = Path(model_path).stem if model_path is not None else self.model_code_name
 
-        eval_dataset = ImageFolderCustom(eval_dir, max_category_samples=self.upper_category_limit_eval,
+        eval_dataset = ImageFolderCustom(eval_dir, max_category_samples=None,
                                          preprocess_fn=self.preprocess, img_size=self.preprocess.transforms[0].size,
                                          file_format=self.file_format, use_advanced_split=False,
                                          split_type='test', seed=self.seed, model_name=model_name)
@@ -460,8 +460,6 @@ class CLIP(nn.Module, PyTorchModelHubMixin):
         table_path = Path(f'{self.output_dir}/tables')
         plot_path.mkdir(parents=True, exist_ok=True)
         time_stamp = time.strftime("%Y%m%d-%H%M")
-        plot_image = plot_path / f'{time_stamp}_EVAL_conf_{self.top_N}n_{self.upper_category_limit}c_{self.model_code_name}.png'
-        table_file = table_path / f'{time_stamp}_EVAL_table_{self.top_N}n_{self.upper_category_limit}c_{self.model_code_name}.csv'
 
         all_pred_scores = []
         all_predictions = []
@@ -499,13 +497,21 @@ class CLIP(nn.Module, PyTorchModelHubMixin):
                 # images.append(images.cpu().numpy())
 
         acc = round(100 * np.sum(np.array(all_predictions) == np.array(all_true_labels)) / len(all_true_labels), 2)
+        print("=" * 40)
         print('\t*\tAccuracy: ', acc)
+        print("=" * 40)
 
         all_pred_scores = np.vstack(all_pred_scores)
 
         # max_logits = np.max(all_pred_scores, axis=1, keepdims=True)
         # exp_logits = np.exp(all_pred_scores - max_logits)
         # all_pred_probs = exp_logits / np.sum(exp_logits, axis=1, keepdims=True)
+
+        number_of_samples = all_pred_scores.shape[0]
+
+        plot_image = plot_path / f'{time_stamp}_{number_of_samples}_EVAL_conf_{self.top_N}n_{self.upper_category_limit}c_{self.model_code_name}.png'
+        table_file = table_path / f'{time_stamp}_{number_of_samples}_EVAL_table_{self.top_N}n_{self.upper_category_limit}c_{self.model_code_name}.csv'
+
 
         if vis:
             # Ensure display labels match the order of predictions
@@ -521,7 +527,7 @@ class CLIP(nn.Module, PyTorchModelHubMixin):
             disp.ax_.set_xticks(tick_positions)
             disp.ax_.set_xticklabels(short_labels)
 
-            disp.ax_.set_title(f"TOP {self.top_N} {self.model_code_name} CM")
+            disp.ax_.set_title(f"TOP {self.top_N} {self.model_code_name} CM  - {acc}%")
             plt.savefig(plot_image, bbox_inches='tight', dpi=300)
             plt.close()
             print(f"Confusion matrix saved to {plot_image}")

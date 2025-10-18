@@ -69,21 +69,7 @@ def dataframe_results(
         test_images = test_images[:min_len]
         # raw_scores would also need truncation if it was used, but we'll assume it's aligned or None
 
-    n_images, n_raw_scores = preds.shape
-    n_categories = len(categories)
     print(f"Final prediction array shape: {preds.shape}")
-
-    # --- FIX 2: Check and align categories and scores ---
-    # If the number of raw scores (columns) is greater than the number of categories, truncate the scores.
-    if n_raw_scores > n_categories:
-        print(
-            f"[WARN] {n_raw_scores} prediction values but only {n_categories} categories. Truncating prediction scores to match categories.")
-        preds = preds[:, :n_categories]
-    # If the number of raw scores is less than the number of categories, truncate the categories list.
-    elif n_raw_scores < n_categories:
-        print(f"[WARN] {n_categories} categories but only {n_raw_scores} prediction scores. Truncating category list.")
-        categories = categories[:n_raw_scores]
-        n_categories = n_raw_scores
 
     # Re-evaluate n_images, n_categories after potential truncation
     if preds.ndim == 2:
@@ -132,11 +118,8 @@ def dataframe_results(
         results.append([document, page_num] + labels + score_vals)
         valid_rows += 1
 
-        # --- Raw scores ---
         if raw_scores is not None:
             raws.append([document, page_num] + [round(float(s), 3) for s in valid_scores])
-
-    # ... (rest of the function for DataFrame construction remains the same) ...
 
     if valid_rows == 0:
         print("[ERROR] No valid prediction rows found — check input shapes or category count.")

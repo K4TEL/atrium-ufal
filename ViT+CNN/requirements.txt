@@ -1,11 +1,12 @@
 evaluate
-huggingface_hub
+configparser
 matplotlib
 numpy
 pandas
 Pillow
-scikit_learn
+scikit-learn
 torch
 torchvision
 transformers
-configparser
+timm
+tensorboard

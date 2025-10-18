@@ -35,36 +35,38 @@ preparation scripts for PDF to PNG conversion
 
 ## Versions 🏁
 
-There are currently 2 version of the model available for download, both of them have the same set of categories, 
-but different data annotations. The latest approved `v2.1` is considered to be default and can be found in the `main` branch
+There are currently several version of the model available for download, both of them have the same set of categories, 
+but different data annotations. The latest `v5.3` is considered to be default and can be found in the `main` branch
 of HF 😊 hub [^1] 🔗 
 
-| Version | Base                             | Pages |   PDFs   | Description                                                                        |
-|--------:|----------------------------------|:-----:|:--------:|:-----------------------------------------------------------------------------------|
-|  `v2.0` | `vit-base-patch16-224`           | 10073 | **3896** | annotations with mistakes, more heterogenous data                                  |
-|  `v2.1` | `vit-base-patch16-224`           | 11940 | **5002** | `main`: more diverse pages in each category, less annotation mistakes              |
-|  `v2.2` | `vit-base-patch16-224`           | 15855 | **5730** | same data as `v2.1` + some restored pages from `v2.0`                              |
-|  `v3.2` | `vit-base-patch16-384`           | 15855 | **5730** | same data as `v2.2`, but a bit larger model base with higher resolution            |
-|  `v5.2` | `vit-large-patch16-384`          | 15855 | **5730** | same data as `v2.2`, but the largest model base with higher resolution             |
-|  `v1.2` | `efficientnetv2_s.in21k`         | 15855 | **5730** | same data as `v2.2`, but the smallest model base (CNN)                             |
-|  `v4.2` | `efficientnetv2_l.in21k_ft_in1k` | 15855 | **5730** | same data as `v2.2`, CNN base model smaller than the largest, may be more accurate |
-|  `v2.3` | `vit-base-patch16-224`           | 38625 |  **0**   | new data annotation phase data, more single-page documents used                    |
-|  `v3.3` | `vit-base-patch16-384`           | 38625 |  **0**   | same data as `v2.3`, but a bit larger model base with higher resolution            |
-|  `v5.3` | `vit-large-patch16-384`          | 38625 |  **0**   | same data as `v2.3`, but the largest model base with higher resolution             |
-|  `v1.3` | `efficientnetv2_s.in21k`         | 38625 |  **0**   | same data as `v2.3`, but the smallest model base (CNN)                             |
-|  `v4.3` | `efficientnetv2_l.in21k_ft_in1k` | 38625 |  **0**   | same data as `v2.3`, CNN base model smaller than the largest, may be more accurate |
+| Version | Base                             | Pages |   PDFs    | Description                                                                        |
+|--------:|----------------------------------|:-----:|:---------:|:-----------------------------------------------------------------------------------|
+|  `v2.0` | `vit-base-patch16-224`           | 10073 | **3896**  | annotations with mistakes, more heterogenous data                                  |
+|  `v2.1` | `vit-base-patch16-224`           | 11940 | **5002**  | `main`: more diverse pages in each category, less annotation mistakes              |
+|  `v2.2` | `vit-base-patch16-224`           | 15855 | **5730**  | same data as `v2.1` + some restored pages from `v2.0`                              |
+|  `v3.2` | `vit-base-patch16-384`           | 15855 | **5730**  | same data as `v2.2`, but a bit larger model base with higher resolution            |
+|  `v5.2` | `vit-large-patch16-384`          | 15855 | **5730**  | same data as `v2.2`, but the largest model base with higher resolution             |
+|  `v1.2` | `efficientnetv2_s.in21k`         | 15855 | **5730**  | same data as `v2.2`, but the smallest model base (CNN)                             |
+|  `v4.2` | `efficientnetv2_l.in21k_ft_in1k` | 15855 | **5730**  | same data as `v2.2`, CNN base model smaller than the largest, may be more accurate |
+|  `v2.3` | `regnety_160.swag_ft_in1k`       | 38625 | **37328** | new data annotation phase data, more single-page documents used, CNN model         |
+|  `v3.3` | `vit-base-patch16-384`           | 38625 | **37328** | same data as `v2.3`, but a bit larger model base with higher resolution            |
+|  `v5.3` | `vit-large-patch16-384`          | 38625 | **37328** | same data as `v2.3`, but the largest model base with higher resolution             |
+|  `v1.3` | `efficientnetv2_m.in21k_ft_in1k` | 38625 | **37328** | same data as `v2.3`, but the smallest model base (CNN)                             |
+|  `v4.3` | `efficientnetv2_l.in21k_ft_in1k` | 38625 | **37328** | same data as `v2.3`, CNN base model smaller than the largest, may be more accurate |
 
 <details>
 
 <summary>Base model - size 👀</summary>
 
-| **Version**                      | **Parameters (M)** | Resolution (px) |
-|----------------------------------|--------------------|-----------------|
-| `efficientnetv2_s.in21k`         | 48                 | 300             |
-| `vit-base-patch16-224`           | 87                 | 224             |
-| `vit-base-patch16-384`           | 87                 | 384             |
-| `efficientnetv2_l.in21k_ft_in1k` | 119                | 384             |
-| `vit-large-patch16-384`          | 305                | 384             |
+| **Version**                      | **Parameters (M)** | Resolution (px) | Revision |
+|----------------------------------|--------------------|-----------------|----------|
+| `efficientnetv2_s.in21k`         | 48                 | 300             | v2.X     |
+| `efficientnetv2_m.in21k_ft_in1k` | 54                 | 384             | v1.3     |
+| `regnety_160.swag_ft_in1k`       | 84                 | 224             | v2.3     |
+| `vit-base-patch16-224`           | 87                 | 224             | v2.X     |
+| `vit-base-patch16-384`           | 87                 | 384             | v3.X     |
+| `efficientnetv2_l.in21k_ft_in1k` | 119                | 384             | v4.X     |
+| `vit-large-patch16-384`          | 305                | 384             | v5.X     |
 
 </details>
 
@@ -76,7 +78,7 @@ of HF 😊 hub [^1] 🔗
 
 🔳 **Base** model repository: 
 - Google's **vit-base-patch16-224**,  **vit-base-patch16-384**, and  **vit-large-patch16-284** [^2] [^13] [^14] 🔗
-- timm's **efficientnetv2_s.in21k** and **efficientnetv2_l.in21k_ft_in1k** [^15] [^16] 🔗
+- timm's **regnety_160.swag_ft_in1k**,  **efficientnetv2_s.in21k**, **efficientnetv2_m.in21k_ft_in1k**, and **efficientnetv2_l.in21k_ft_in1k** [^18] [^15] [^16] [^19] 🔗
 
 The model was trained on the manually ✍️ annotated dataset of historical documents, in particular, images of pages 
 from the archival documents with paper sources that were scanned into digital form. 
@@ -91,7 +93,30 @@ paper source into one of the categories - each responsible for the following con
 > In other words, when several APIs for different OCR subtasks are at your disposal - run this classifier first to 
 > mark the input data as machine-typed (old style fonts) / handwritten ✏️ / just printed plain ️📄 text 
 > or structured in tabular 📏 format text, as well as to mark the presence of the printed 🌄 or drawn 📈 graphic 
-> materials yet to be extracted from the page images.
+> materials to be extracted from the page images.
+
+
+| Base Model                                 | Revision | max_cat | Best_Prec         | Best_Acc       | Fold | Note         |
+|--------------------------------------------|----------|---------|-------------------|----------------|------|--------------|
+| google/vit-base-patch16-224                | v12.3    | 14,000  | 98.89       %     | 98.88    %     | 1    |              |
+| **google/vit-base-patch16-384**            | **v3.3** | 14,000  | **99.01       %** | **98.99    %** | 5    | Good & Small |
+| **google/vit-large-patch16-384**           | **v5.3** | 14,000  | **99.25       %** | **99.25    %** | 2    | Best & Large |
+| microsoft/dit-base-finetuned-rvlcdip       | v9.3     | 14,000  | 98.71       %     | 98.72    %     | 3    |              |
+| microsoft/dit-large-finetuned-rvlcdip      | v10.3    | 14,000  | 98.66       %     | 98.66    %     | 3    |              |
+| microsoft/dit-large                        | v11.3    | 14,000  | 98.53       %     | 98.53    %     | 2    |              |
+| timm/regnety_120.sw_in12k_ft_in1k          | v6.3     | 14,000  | 98.29       %     | 98.29    %     | 3    |              |
+| **timm/regnety_160.swag_ft_in1k**          | **v2.3** | 14,000  | **99.21       %** | **99.21    %** | 1    | Best & Small |
+| timm/regnety_640.seer                      | v8.3     | 14,000  | 98.79       %     | 98.79    %     | 5    |              |
+| **timm/tf_efficientnetv2_l.in21k_ft_in1k** | **v4.3** | 14,000  | **98.79       %** | **98.77    %** | 1    | Good & Large |
+| **timm/tf_efficientnetv2_m.in21k_ft_in1k** | **v1.3** | 14,000  | **98.90       %** | **98.90    %** | 1    | Good & Small |
+| timm/tf_efficientnetv2_s.in21k             | v7.3     | 14,000  | 97.90       %     | 97.87    %     | 1    |              |
+
+The rows highlighted in bold correspond to the best models uploaded to the HF 😊 hub [^1] 🔗,
+
+![comparison_graph.png](model_acc_compared.png)
+
+The table and figure above show accuracy and parameters comparison of different base models tested on the same data. The figure 
+demonstrates best models overall (above the trendline) and the table shows all the tested models with their best accuracy and precision scores.
 
 ### Data 📜
 
@@ -1421,3 +1446,5 @@ same as for the training pages directory - the category 🪧 subdirectories are 
 [^15]: https://huggingface.co/timm/tf_efficientnetv2_s.in21k
 [^16]: https://huggingface.co/timm/tf_efficientnetv2_l.in21k_ft_in1k
 [^17]: http://hdl.handle.net/20.500.12800/1-5959
+[^18]: https://huggingface.co/timm/regnety_160.swag_ft_in1k
+[^19]: https://huggingface.co/timm/tf_efficientnetv2_m.in21k_ft_in1k

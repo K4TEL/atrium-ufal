@@ -265,7 +265,9 @@ def visualize_results(csv_file: str, output_dir: str, zero_shot: bool = False):
         "ViT-B/32 ": "indigo",
         "ViT-B/16 ": "steelblue",
         "ViT-L/14 ": "orange",
-        "ViT-L/14-336 ": "gold"
+        "ViT-L/14-336 ": "gold",
+        "ViT-L/14@336 ": "gold",
+        "ViT-L/14@336px ": "gold",
     }
 
     category_codes = {
@@ -341,7 +343,7 @@ def visualize_results(csv_file: str, output_dir: str, zero_shot: bool = False):
         steelblue_df = results_df[results_df['color'] == 'steelblue']
         if not steelblue_df.empty:
             steelblue_mean = steelblue_df['accuracy'].mean()
-            steelblue_line = plt.axhline(y=steelblue_mean, color='black', linestyle='--', linewidth=2, alpha=0.7)
+            steelblue_line = plt.axhline(y=steelblue_mean, color='black', linestyle='--', linewidth=2, alpha=0.4)
 
     plt.xlabel("Model Name")
     plt.ylabel("Top-1 Accuracy (%)")
@@ -363,7 +365,7 @@ def visualize_results(csv_file: str, output_dir: str, zero_shot: bool = False):
     plt.tight_layout()
 
 
-    offset = 0.1 if not zero_shot else 1
+    offset = 0.5 if not zero_shot else 1
     # set min-max y-axis values
     plt.ylim(results_df['accuracy'].min() - offset,
              100 if results_df['accuracy'].max() == 100 else results_df['accuracy'].max() + offset)
@@ -414,7 +416,7 @@ def evaluate_multiple_models(model_dir: str, eval_dir: str, categ_dir: str, devi
         "213_": "average",
         "223_": "average",
         "31": "init",
-        "32": "detail",
+        "32": "details",
         "33": "extra",
         "34": "gemini",
         "35": "gpt",
@@ -443,23 +445,47 @@ def evaluate_multiple_models(model_dir: str, eval_dir: str, categ_dir: str, devi
 
     if zero_shot:
         print("Zero-shot evaluation mode enabled. Using pre-computed text features.")
-        for base_name in map_base_name.values():
+        for base_filename, base_name in map_base_name.items():
             print(f"Using base model: {base_name}")
             vis_model_name = f"{base_name} zero"
 
+            vis_categ = "UNK"  # Default category
+            for code, categ in category_sufix.items():
+                if code in base_filename:
+                    vis_categ = categ
+                    break
+
+            categories_tsv = f"{cat_prefix}_{vis_categ}.tsv"
+            if vis_categ == "average" or vis_categ == "UNK":
+                categories_tsv = f"TOTAL_{cat_prefix}.tsv"
+                model_use_avg = True
+            else:
+                model_use_avg = False
+            categ_tsv_path = Path(__file__).parent / categ_dir / categories_tsv
+
+            model_revision = base_filename.split('_rev_')[-1]
+
             try:
-                clip_instance = CLIP(None, None, 1, base_name, device,
-                                     seed=random_seed, test_ratio=test_fraction, input_format=input_format,
-                                     cat_prefix=cat_prefix, output_dir=str(output_dir), avg=True, zero_shot=False)
+                # clip_instance = CLIP(None, None, 1, base_name, device,
+                #                      seed=random_seed, test_ratio=test_fraction, input_format=input_format,
+                #                      cat_prefix=cat_prefix, output_dir=str(output_dir), avg=True, zero_shot=False)
+                clip_instance = CLIP(max_category_samples=None, test_ratio=test_fraction,
+                                     eval_max_category_samples=None,
+                                     top_N=1, model_name=base_name, device=device,
+                                     categories_tsv=str(categ_tsv_path), seed=random_seed, input_format=input_format,
+                                     output_dir=str(output_dir), categories_dir=categ_dir,
+                                     revision=model_revision,
+                                     cat_prefix=cat_prefix, avg=model_use_avg, zero_shot=False)
 
                 # Prepare evaluation dataset and dataloader once
-                eval_dataset = ImageFolderCustom(eval_dir, max_category_samples=None,
-                                         preprocess_fn=preprocess_func, img_size=img_size,
-                                         file_format=input_format, use_advanced_split=False, test_ratio=test_fraction,
-                                         split_type='test', seed=random_seed, model_name=base_name)
+                eval_dataset = ImageFolderCustom(eval_dir, max_category_samples=None, seed=random_seed,
+                                                 test_ratio=test_fraction, split_type='test',
+                                                 file_format=input_format, model_name=base_filename,
+                                                 preprocess_fn=clip_instance.preprocess, use_advanced_split=False,
+                                                 img_size=clip_instance.preprocess.transforms[0].size)
                 eval_dataloader = torch.utils.data.DataLoader(eval_dataset, batch_size=batch_size)
 
-                accuracies[vis_model_name] = clip_instance.test(eval_dataloader, vis=False)
+                accuracies[vis_model_name] = clip_instance.test(eval_dataloader, vis=vis, image_files=eval_dataset.paths)
                 print(f"Top 1 Accuracy for {vis_model_name} {base_name}: {accuracies[vis_model_name]:.2f}%")
             except Exception as e:
                 print(f"Error evaluating model {base_name}: {e}")
@@ -504,20 +530,7 @@ def evaluate_multiple_models(model_dir: str, eval_dir: str, categ_dir: str, devi
                         model_revision = filename_parts[i+1]
                         break
 
-                model_name = model_name_stem
-                for i, part in enumerate(filename_parts):
-                    if part == "model":
-                        model_name = filename_parts[i+1]
-                        break
-
-
-
                 try:
-                    # Load model state dict
-                    # clip_instance = CLIP(None, None, 1, base_name, device,
-                    #                      seed=random_seed, test_ratio=test_fraction, input_format=input_format,
-                    #                      cat_prefix=cat_prefix, output_dir=str(output_dir), avg=True, zero_shot=False)
-
                     clip_instance = CLIP(max_category_samples=None, test_ratio=test_fraction,
                                          eval_max_category_samples=None,
                                          top_N=1, model_name=base_name, device=device,
@@ -539,7 +552,7 @@ def evaluate_multiple_models(model_dir: str, eval_dir: str, categ_dir: str, devi
                     clip_instance.model.load_state_dict(checkpoint['model_state_dict'])
                     print(f"Model loaded from epoch {checkpoint['epoch']} with loss {checkpoint['loss']:.4f}.")
 
-                    accuracies[vis_model_name] = clip_instance.test(eval_dataloader, vis=False, image_files=eval_dataset.paths)
+                    accuracies[vis_model_name] = clip_instance.test(eval_dataloader, vis=vis, image_files=eval_dataset.paths)
                     print(f"Top 1 Accuracy for {vis_model_name} {model_name_stem}: {accuracies[vis_model_name]:.2f}%")
 
                 except Exception as e:
