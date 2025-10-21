@@ -293,13 +293,11 @@ if __name__ == "__main__":
             device=device,
             cat_prefix=args.cat_prefix,
             vis=True,
-            upper_categ_limit=args.max_categ_eval,
             random_seed=seed,
-            preprocess_func=clip_instance.preprocess,
             input_format=args.file_format,
-            img_size=clip_instance.preprocess.transforms[0].size,
             test_fraction=test_size,
             zero_shot=args.zero_shot,
+            top_N=args.topn
         )
     elif args.zero_shot:  # New branch for zero-shot prediction
         if args.file:

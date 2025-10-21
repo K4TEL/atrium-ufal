@@ -509,8 +509,8 @@ class CLIP(nn.Module, PyTorchModelHubMixin):
 
         number_of_samples = all_pred_scores.shape[0]
 
-        plot_image = plot_path / f'{time_stamp}_{number_of_samples}_EVAL_conf_{self.top_N}n_{self.upper_category_limit}c_{self.model_code_name}.png'
-        table_file = table_path / f'{time_stamp}_{number_of_samples}_EVAL_table_{self.top_N}n_{self.upper_category_limit}c_{self.model_code_name}.csv'
+        plot_image = plot_path / f'{time_stamp}_{number_of_samples}_EVAL_TOP-{self.top_N}_{self.model_code_name}.png'
+        table_file = table_path / f'{time_stamp}_{number_of_samples}_EVAL_TOP-{self.top_N}_{self.model_code_name}.csv'
 
 
         if vis:
@@ -748,7 +748,8 @@ class CLIP(nn.Module, PyTorchModelHubMixin):
             batch_end = min(batch_start + chunk_size, len(images))
             batch_images = images[batch_start:batch_end]
 
-            res_list, raw_list, tru_images = [], [], []
+            # --- FIX: Renamed lists for clarity ---
+            all_scores_list, tru_images = [], []
 
             # Process batch
             for img_path in tqdm(batch_images,
@@ -758,24 +759,26 @@ class CLIP(nn.Module, PyTorchModelHubMixin):
                     image_input = self.preprocess(image).unsqueeze(0).to(self.device)
                     scores, indices, raw_scores = self.top_N_prediction(image_input, self.top_N)
 
-                    res_list.append(indices)
-                    if raw:
-                        raw_list.append(raw_scores.tolist())
+                    # --- FIX: Always append the full raw_scores list. Remove res_list (indices). ---
+                    all_scores_list.append(raw_scores.tolist())
                     tru_images.append(img_path.name)
 
                 except Exception as e:
                     print(f"Error processing file {img_path}: {e}")
                     continue
 
-            if not res_list:
+            # --- FIX: Check the correct list ---
+            if not all_scores_list:
                 continue
 
-            # Convert batch results to dataframe
-            res_list = np.concatenate(res_list, axis=0)
+            # --- FIX: Remove unnecessary concatenation of res_list ---
+            # res_list = np.concatenate(res_list, axis=0) # <--- REMOVED
+
+            # --- FIX: Pass the correct lists to dataframe_results ---
             out_df, raw_df = dataframe_results(
                 test_images=tru_images,
-                test_predictions=res_list,
-                raw_scores=raw_list,
+                test_predictions=all_scores_list,  # <--- Pass the full scores here
+                raw_scores=all_scores_list if raw else None, # <--- Pass scores if raw=True, else None
                 top_N=self.top_N,
                 categories=self.categories
             )
@@ -797,7 +800,8 @@ class CLIP(nn.Module, PyTorchModelHubMixin):
             total_processed += len(tru_images)
 
             # Free memory
-            del res_list, raw_list, tru_images, out_df
+            # --- FIX: Update del statement ---
+            del all_scores_list, tru_images, out_df
             if raw:
                 del raw_df
 
@@ -1130,6 +1134,5 @@ def split_data_80_10_10(files: list, labels: list, random_seed: int, max_categ: 
     train_labels = labels[train_indices]
 
     return train_files, val_files, test_files, train_labels, val_labels, test_labels
-
 
 

@@ -252,20 +252,29 @@ class CLIP_BalancedBatchSampler(torch.utils.data.sampler.BatchSampler):
         return self.n_dataset // self.batch_size
 
 
+import pandas as pd
+import matplotlib.pyplot as plt
+from pathlib import Path
+
+
+# Assume pandas (pd) and matplotlib.pyplot (plt) are imported,
+# and Path is imported from pathlib, as implied by the original code.
+
 def visualize_results(csv_file: str, output_dir: str, zero_shot: bool = False):
     """
     Generate a bar plot from a CSV file of model accuracies.
 
     :param csv_file: Path to the CSV file containing model accuracies.
     :param output_dir: Directory where the plot will be saved.
-    :param vis_orders: Dictionary to define custom sorting order.
-    :param base_model_colors: Dictionary to map base model names to specific colors.
+    :param vis_orders: Dictionary to define custom sorting order. (Note: This is defined internally now)
+    :param base_model_colors: Dictionary to map base model names to specific colors. (Note: This is defined internally now)
     """
     base_model_colors = {
         "ViT-B/32 ": "indigo",
         "ViT-B/16 ": "steelblue",
         "ViT-L/14 ": "orange",
         "ViT-L/14-336 ": "gold",
+        "ViT-L/14-336px ": "gold",
         "ViT-L/14@336 ": "gold",
         "ViT-L/14@336px ": "gold",
     }
@@ -273,7 +282,7 @@ def visualize_results(csv_file: str, output_dir: str, zero_shot: bool = False):
     category_codes = {
         "average": 10,
         "avg": 10,
-        "detail": 2,  # 9
+        "details": 2,  # 9
         "extra": 3,  # 8
         "gemini": 4,  # 6
         "gpt": 5,  # 4
@@ -286,6 +295,7 @@ def visualize_results(csv_file: str, output_dir: str, zero_shot: bool = False):
 
     vis_order = {}
 
+    # Load the CSV into a DataFrame
     results_df = pd.read_csv(csv_file)
 
     for vis_model_name in results_df['model_name'].tolist():
@@ -294,23 +304,44 @@ def visualize_results(csv_file: str, output_dir: str, zero_shot: bool = False):
                 vis_order[vis_model_name] = order
                 break
 
-    # Load the CSV into a DataFrame
+    # Store base model for each entry (for legend)
+    # This MUST be created before sorting
+    results_df['base_model'] = results_df['model_name'].apply(
+        lambda x: next((base.strip() for base in base_model_colors.keys() if base in x), None)
+    )
 
     if not zero_shot:
         # Apply custom sorting based on vis_orders
         results_df['vis_order'] = results_df['model_name'].apply(lambda x: vis_order.get(x, 0))
-        results_df.sort_values(by='vis_order', inplace=True, ascending=True)
+
+        # --- MODIFICATION ---
+        # Sort by category (vis_order) first, then alphabetically by base_model
+        results_df.sort_values(
+            by=['vis_order', 'base_model'],
+            inplace=True,
+            ascending=[True, True],
+            na_position='last'  # Put models with no base_model last within their category
+        )
+        # --- END MODIFICATION ---
+
         results_df.drop(columns='vis_order', inplace=True)
+    else:
+        # --- ADDED SORT FOR ZERO-SHOT ---
+        # For zero-shot, just sort alphabetically by base_model
+        results_df.sort_values(
+            by=['base_model'],
+            inplace=True,
+            ascending=True,
+            na_position='last'  # Put models with no base_model last
+        )
+        # --- END ADDITION ---
 
     # Assign colors based on base model
     results_df['color'] = results_df['model_name'].apply(
         lambda x: next((color for base, color in base_model_colors.items() if base in x), 'black')
     )
 
-    # Store base model for each entry (for legend)
-    results_df['base_model'] = results_df['model_name'].apply(
-        lambda x: next((base.strip() for base in base_model_colors.keys() if base in x), None)
-    )
+    # (base_model column is already created)
 
     # Create shortened labels by removing base model prefix
     results_df['short_label'] = results_df.apply(
@@ -323,24 +354,27 @@ def visualize_results(csv_file: str, output_dir: str, zero_shot: bool = False):
 
     # Plot bars individually (not stacked) and collect handles for legend
     legend_handles = {}
-    bars = plt.bar(range(len(results_df)), results_df['accuracy'], color=results_df['color'])
+    # Use reset_index to ensure bars are plotted 0, 1, 2... after sorting
+    plot_df = results_df.reset_index(drop=True)
+    bars = plt.bar(plot_df.index, plot_df['accuracy'], color=plot_df['color'])
 
-    for idx, row in results_df.iterrows():
+    for idx, row in plot_df.iterrows():
         if row['base_model'] and row['base_model'] not in legend_handles:
-            legend_handles[row['base_model']] = bars[list(results_df.index).index(idx)]
+            legend_handles[row['base_model']] = bars[idx]  # Use the new index 'idx'
 
     # Add values on top of each bar
-    for i, (idx, row) in enumerate(results_df.iterrows()):
+    for i, (idx, row) in enumerate(plot_df.iterrows()):
         plt.text(i, row['accuracy'], f"{row['accuracy']:.2f}",
                  ha='center', va='bottom', fontsize=12, color='black')
 
     # Add overall mean line
-    mean_accuracy = results_df['accuracy'].mean()
+    mean_accuracy = plot_df['accuracy'].mean()
     mean_line = plt.axhline(y=mean_accuracy, color='red', linestyle='--', linewidth=2, alpha=0.7)
 
     # Add steelblue (ViT-B/16) mean line
+    steelblue_line = None  # Initialize
     if not zero_shot:
-        steelblue_df = results_df[results_df['color'] == 'steelblue']
+        steelblue_df = plot_df[plot_df['color'] == 'steelblue']
         if not steelblue_df.empty:
             steelblue_mean = steelblue_df['accuracy'].mean()
             steelblue_line = plt.axhline(y=steelblue_mean, color='black', linestyle='--', linewidth=2, alpha=0.4)
@@ -348,7 +382,7 @@ def visualize_results(csv_file: str, output_dir: str, zero_shot: bool = False):
     plt.xlabel("Model Name")
     plt.ylabel("Top-1 Accuracy (%)")
     plt.title(f"Model {'zero_shot' if zero_shot else ''} Accuracy Comparison")
-    plt.xticks(range(len(results_df)), results_df['short_label'], rotation=45, ha='right')
+    plt.xticks(plot_df.index, plot_df['short_label'], rotation=45, ha='right')  # Use plot_df index and labels
     plt.grid(axis='y', linestyle='--', alpha=0.7)
 
     # Create legend with base models and mean lines
@@ -357,18 +391,18 @@ def visualize_results(csv_file: str, output_dir: str, zero_shot: bool = False):
     legend_bars = [handle for _, handle in legend_items]
     legend_labels.append(f'Overall Mean: {mean_accuracy:.2f}%')
     legend_bars.append(mean_line)
-    if not zero_shot and not steelblue_df.empty:
+    if not zero_shot and steelblue_line is not None:  # Check if steelblue_line was created
         legend_labels.append(f'ViT-B/16 Mean: {steelblue_mean:.2f}%')
         legend_bars.append(steelblue_line)
 
-    plt.legend(legend_bars, legend_labels)
+    # plot legend in the bottom left corner
+    plt.legend(legend_bars, legend_labels, loc='lower left', fontsize='small')
     plt.tight_layout()
 
-
-    offset = 0.5 if not zero_shot else 1
+    offset = 0.1 if not zero_shot else 1
     # set min-max y-axis values
-    plt.ylim(results_df['accuracy'].min() - offset,
-             100 if results_df['accuracy'].max() == 100 else results_df['accuracy'].max() + offset)
+    plt.ylim(plot_df['accuracy'].min() - offset,
+             100 if plot_df['accuracy'].max() == 100 else plot_df['accuracy'].max() + offset)
 
     # Save the plot
     plot_output_dir = Path(output_dir)
@@ -381,10 +415,10 @@ def visualize_results(csv_file: str, output_dir: str, zero_shot: bool = False):
 
 
 def evaluate_multiple_models(model_dir: str, eval_dir: str, categ_dir: str, device: str,
-                             upper_categ_limit: int, random_seed: int, img_size: int, input_format: str,
+                             random_seed: int, input_format: str,
                              model_suffix: str = "7e.pt", vis: bool = True, cat_prefix: str = "page_categories",
-                             preprocess_func: callable = None, test_fraction: float = 0.1,
-                             batch_size: int = 8, zero_shot: bool = False):
+                             test_fraction: float = 0.1,
+                             batch_size: int = 8, zero_shot: bool = False, top_N: int = 1):
     """
     Evaluates multiple saved models in a directory and records their Top-1 accuracy.
     :param model_dir: Directory containing the saved model files.
@@ -416,12 +450,12 @@ def evaluate_multiple_models(model_dir: str, eval_dir: str, categ_dir: str, devi
         "213_": "average",
         "223_": "average",
         "31": "init",
-        "32": "details",
-        "33": "extra",
+        "32_7": "details",
+        "33_7": "extra",
         "34": "gemini",
         "35": "gpt",
-        "36": "large",
-        "37": "mid",
+        "36_7": "large",
+        "37_7": "mid",
         "38": "min",
         "39": "short",
     }
@@ -533,7 +567,7 @@ def evaluate_multiple_models(model_dir: str, eval_dir: str, categ_dir: str, devi
                 try:
                     clip_instance = CLIP(max_category_samples=None, test_ratio=test_fraction,
                                          eval_max_category_samples=None,
-                                         top_N=1, model_name=base_name, device=device,
+                                         top_N=top_N, model_name=base_name, device=device,
                                          categories_tsv=str(categ_tsv_path), seed=random_seed, input_format=input_format,
                                          output_dir=str(output_dir), categories_dir=categ_dir,
                                          model_dir=str(model_path),
