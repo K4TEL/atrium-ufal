@@ -585,7 +585,7 @@ results can be found in the [result](result) 📁 folder.
 
 </details>
 
-`v2.2.3` Evaluation set's accuracy (**Top-1**):  **98.87%** 🏆
+`v2.2.3` Evaluation set's accuracy (**Top-1**):  **98.97%** 🏆
 
 <details>
 
@@ -1038,11 +1038,21 @@ of the [config.txt](config.txt) ⚙ file. Importantly, `avg` - average configura
 
 In case your descriptions table contains **more than 1 text per category 🪧**, the `--avg` flag will be set to `True` automatically.
 
-[descriptions_comparison_graph.png](descriptions_comparison.png) 📎 is a graph containing separate and averaged results 
-of all category 🪧 descriptions. Using averaged text embeddings of all label description seems to be the most powerful way to
-classify our images.
+[descriptions_comparison_graph.png](result%2Fstats%2Fmodel_accuracy_plot.png) 📎 is a graph containing separate and averaged results 
+of all category 🪧 descriptions. Using averaged text embeddings of all label description seemed to be the most powerful way to
+classify our images based on the zero-shot evaluations.
 
-![description comparison graph](descriptions_comparison.png)
+![description comparison graph_zero](result%2Fstats%2Fmodel_accuracy_plot_zero.png)
+
+As the following experiments showed, the averaging strategy is not the best. Moreover, the smallest model
+ViT-B/16 showed the best results after separately fine-tuning model on some category 🪧 sets.
+
+![description comparison graph](result%2Fstats%2Fmodel_accuracy_plot.png)
+
+Check out all of the prepared category 🪧 descriptions in the [category_descriptions](category_descriptions) 📁 folder.
+Which supports versions mapping from 1 to 9 for the csv files starting with `page_categories_` prefix. The separate set
+starting with `TOTAL` is a mixture of all category descriptions, a set starting with `GENERAL` is a simplified category 🪧 set 
+(only 4 classes), and a set starting with `EXPANDED` is an experimental more fine-grained in categories version of the category 🪧 descriptions.
 
 > You are free to play with the **learning rate** right in the training function arguments called in the [run.py](run.py) 📎 file, 
 > yet **warmup ratio and other hyperparameters** are accessible only through the [classifier.py](classifier.py) 📎 file.

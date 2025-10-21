@@ -36,7 +36,7 @@
 <p><strong>Scope:</strong> Processing of images, training / evaluation of CLIP model,<br>
 input file/directory processing, class 🪧  (category) results of top<br>
 N predictions output, predictions summarizing into a tabular format,<br>
-HF 😊 hub <sup><a href="#user-content-fn-1-4e47fa72c02bd03bc3655fd848b4c1df" id="user-content-fnref-1-4e47fa72c02bd03bc3655fd848b4c1df" data-footnote-ref="" aria-describedby="footnote-label">1</a></sup> 🔗 support for the model, multiplatform (Win/Lin) data<br>
+HF 😊 hub <sup><a href="#user-content-fn-1-b521c62d7f8b6cd097bbd2cf39b8f14d" id="user-content-fnref-1-b521c62d7f8b6cd097bbd2cf39b8f14d" data-footnote-ref="" aria-describedby="footnote-label">1</a></sup> 🔗 support for the model, multiplatform (Win/Lin) data<br>
 preparation scripts for PDF to PNG conversion</p>
 <h3>Table of contents 📑</h3>
 <ul>
@@ -79,8 +79,8 @@ preparation scripts for PDF to PNG conversion</p>
 <hr>
 <h2>Versions 🏁</h2>
 <p>There are currently 4 version of the model available for download, both of them have the same set of categories,<br>
-but different data annotations. The latest approved <code class="notranslate">v1.1</code> is considered to be default and can be found in the <code class="notranslate">main</code> branch<br>
-of HF 😊 hub <sup><a href="#user-content-fn-1-4e47fa72c02bd03bc3655fd848b4c1df" id="user-content-fnref-1-2-4e47fa72c02bd03bc3655fd848b4c1df" data-footnote-ref="" aria-describedby="footnote-label">1</a></sup> 🔗</p>
+but different data annotations. The latest <code class="notranslate">v1.1.3</code> is considered to be default and can be found in the <code class="notranslate">main</code> branch<br>
+of HF 😊 hub <sup><a href="#user-content-fn-1-b521c62d7f8b6cd097bbd2cf39b8f14d" id="user-content-fnref-1-2-b521c62d7f8b6cd097bbd2cf39b8f14d" data-footnote-ref="" aria-describedby="footnote-label">1</a></sup> 🔗</p>
 <markdown-accessiblity-table><table role="table">
 <thead>
 <tr>
@@ -97,7 +97,7 @@ of HF 😊 hub <sup><a href="#user-content-fn-1-4e47fa72c02bd03bc3655fd848b4c1df
 <td><code class="notranslate">ViT-B/16</code></td>
 <td align="center">15855</td>
 <td align="center"><strong>5730</strong></td>
-<td align="left">smallest (default)</td>
+<td align="left">smallest (old default)</td>
 </tr>
 <tr>
 <td align="right"><code class="notranslate">v1.2</code></td>
@@ -119,6 +119,34 @@ of HF 😊 hub <sup><a href="#user-content-fn-1-4e47fa72c02bd03bc3655fd848b4c1df
 <td align="center">15855</td>
 <td align="center"><strong>5730</strong></td>
 <td align="left">large with highest resolution</td>
+</tr>
+<tr>
+<td align="right"><code class="notranslate">v1.1.3</code></td>
+<td><code class="notranslate">ViT-B/16</code></td>
+<td align="center">38625</td>
+<td align="center"><strong>37328</strong></td>
+<td align="left">smallest and most accurate</td>
+</tr>
+<tr>
+<td align="right"><code class="notranslate">v1.2.3</code></td>
+<td><code class="notranslate">ViT-B/32</code></td>
+<td align="center">38625</td>
+<td align="center"><strong>37328</strong></td>
+<td align="left">small and 2nd in accuracy</td>
+</tr>
+<tr>
+<td align="right"><code class="notranslate">v2.1.3</code></td>
+<td><code class="notranslate">ViT-B/14</code></td>
+<td align="center">38625</td>
+<td align="center"><strong>37328</strong></td>
+<td align="left">largest and least accurate</td>
+</tr>
+<tr>
+<td align="right"><code class="notranslate">v2.2.3</code></td>
+<td><code class="notranslate">ViT-B/14@336</code></td>
+<td align="center">38625</td>
+<td align="center"><strong>37328</strong></td>
+<td align="left">largest and least accurate</td>
 </tr>
 </tbody>
 </table></markdown-accessiblity-table>
@@ -153,8 +181,8 @@ of HF 😊 hub <sup><a href="#user-content-fn-1-4e47fa72c02bd03bc3655fd848b4c1df
 </details>
 <h2>Model description 📇</h2>
 <p><a target="_blank" rel="noopener noreferrer" href="architecture_clip.png"><img src="architecture_clip.png" alt="architecture_diagram" style="max-width: 100%;"></a></p>
-<p>🔲 <strong>Fine-tuned</strong> model repository: UFAL's <strong>clip-historical-page</strong> <sup><a href="#user-content-fn-1-4e47fa72c02bd03bc3655fd848b4c1df" id="user-content-fnref-1-3-4e47fa72c02bd03bc3655fd848b4c1df" data-footnote-ref="" aria-describedby="footnote-label">1</a></sup> 🔗</p>
-<p>🔳 <strong>Base</strong> model repository: OpenAI's <strong>clip-vit-base-patch16</strong>,  <strong>clip-vit-base-patch32</strong>,  <strong>clip-vit-large-patch14</strong>, <strong>clip-vit-large-patch14-336</strong> <sup><a href="#user-content-fn-2-4e47fa72c02bd03bc3655fd848b4c1df" id="user-content-fnref-2-4e47fa72c02bd03bc3655fd848b4c1df" data-footnote-ref="" aria-describedby="footnote-label">2</a></sup> <sup><a href="#user-content-fn-13-4e47fa72c02bd03bc3655fd848b4c1df" id="user-content-fnref-13-4e47fa72c02bd03bc3655fd848b4c1df" data-footnote-ref="" aria-describedby="footnote-label">3</a></sup> <sup><a href="#user-content-fn-14-4e47fa72c02bd03bc3655fd848b4c1df" id="user-content-fnref-14-4e47fa72c02bd03bc3655fd848b4c1df" data-footnote-ref="" aria-describedby="footnote-label">4</a></sup> <sup><a href="#user-content-fn-15-4e47fa72c02bd03bc3655fd848b4c1df" id="user-content-fnref-15-4e47fa72c02bd03bc3655fd848b4c1df" data-footnote-ref="" aria-describedby="footnote-label">5</a></sup> 🔗</p>
+<p>🔲 <strong>Fine-tuned</strong> model repository: UFAL's <strong>clip-historical-page</strong> <sup><a href="#user-content-fn-1-b521c62d7f8b6cd097bbd2cf39b8f14d" id="user-content-fnref-1-3-b521c62d7f8b6cd097bbd2cf39b8f14d" data-footnote-ref="" aria-describedby="footnote-label">1</a></sup> 🔗</p>
+<p>🔳 <strong>Base</strong> model repository: OpenAI's <strong>clip-vit-base-patch16</strong>,  <strong>clip-vit-base-patch32</strong>,  <strong>clip-vit-large-patch14</strong>, <strong>clip-vit-large-patch14-336</strong> <sup><a href="#user-content-fn-2-b521c62d7f8b6cd097bbd2cf39b8f14d" id="user-content-fnref-2-b521c62d7f8b6cd097bbd2cf39b8f14d" data-footnote-ref="" aria-describedby="footnote-label">2</a></sup> <sup><a href="#user-content-fn-13-b521c62d7f8b6cd097bbd2cf39b8f14d" id="user-content-fnref-13-b521c62d7f8b6cd097bbd2cf39b8f14d" data-footnote-ref="" aria-describedby="footnote-label">3</a></sup> <sup><a href="#user-content-fn-14-b521c62d7f8b6cd097bbd2cf39b8f14d" id="user-content-fnref-14-b521c62d7f8b6cd097bbd2cf39b8f14d" data-footnote-ref="" aria-describedby="footnote-label">4</a></sup> <sup><a href="#user-content-fn-15-b521c62d7f8b6cd097bbd2cf39b8f14d" id="user-content-fnref-15-b521c62d7f8b6cd097bbd2cf39b8f14d" data-footnote-ref="" aria-describedby="footnote-label">5</a></sup> 🔗</p>
 <p>The model was trained on the manually ✍️ annotated dataset of historical documents, in particular, images of pages<br>
 from the archival documents with paper sources that were scanned into digital form.</p>
 <p>The images contain various combinations of texts ️📄, tables 📏, drawings 📈, and photos 🌄 -<br>
@@ -168,31 +196,168 @@ mark the input data as machine-typed (old style fonts) / handwritten ✏️ / ju
 or structured in tabular 📏 format text, as well as to mark the presence of the printed 🌄 or drawn 📈 graphic<br>
 materials yet to be extracted from the page images.</p>
 </blockquote>
+<p><a target="_blank" rel="noopener noreferrer" href="model_acc_compared.png"><img src="model_acc_compared.png" alt="comparison_graph.png" style="max-width: 100%;"></a></p>
+<p>The figure above shows accuracy and parameters comparison of different base models tested on the same data, demonstrating<br>
+best models overall (above the trendline) which mainly includes image-based models like CNNs and transformers, and the hybrid<br>
+CLIP models themselves (best versions of each base model).</p>
 <h3>Data 📜</h3>
-<p>The dataset is provided under Public Domain license, and consists of <strong>15855</strong> PNG images of pages from the archival documents.<br>
-The source image files and their annotation can be found in the LINDAT repository <sup><a href="#user-content-fn-16-4e47fa72c02bd03bc3655fd848b4c1df" id="user-content-fnref-16-4e47fa72c02bd03bc3655fd848b4c1df" data-footnote-ref="" aria-describedby="footnote-label">6</a></sup> 🔗.</p>
-<p><strong>Training</strong> 💪 set of the model: <strong>14267</strong> images</p>
-<blockquote>
-<p><strong>90% of all</strong> - proportion in categories 🪧 tabulated <a href="#categories-">below</a></p>
-</blockquote>
-<p><strong>Evaluation</strong> 🏆 set:  <strong>1583</strong> images</p>
-<blockquote>
-<p><strong>10% of all</strong> - same proportion in categories 🪧 as <a href="#categories-">below</a> and demonstrated in <a href="result%2Ftables%2FEVAL_table_1n_2000c_ViTB16_20250701-2159.csv">model_EVAL.csv</a> 📎</p>
-</blockquote>
-<p>Manual ✍️ annotation was performed beforehand and took some time ⌛, the categories 🪧  were formed from<br>
+<p>The dataset is provided under Public Domain license, and consists of <strong>48,499</strong> PNG images of pages from <strong>37,328</strong> archival documents.<br>
+The source image files and their annotation can be found in the LINDAT repository <sup><a href="#user-content-fn-16-b521c62d7f8b6cd097bbd2cf39b8f14d" id="user-content-fnref-16-b521c62d7f8b6cd097bbd2cf39b8f14d" data-footnote-ref="" aria-describedby="footnote-label">6</a></sup> 🔗.</p>
+<p>The annotation provided includes 5 different<br>
+dataset splits of <code class="notranslate">vX.3</code> model versions, and it's recommended to average all 5 trained model weights to get a more robust<br>
+model for prediction (in some cases, like <code class="notranslate">TEXT</code> and <code class="notranslate">TEXT_T</code> categories which samples very often look the same, the accuracy of those<br>
+problematic categories could drop below 90% with off-diagonal errors rising above 10% after the averaging of trained models). Anyhow, the<br>
+averaged model usually score higher accuracy than any of its individual components... or sometimes causes a drop in accuracy for<br>
+the most ambiguous categories 🪧️ - depends mostly on the base model choice.</p>
+<p>Our dataset is not split using a simple random shuffle. This is because the data contains structured and clustered<br>
+distributions of page types within many categories. A random shuffle would likely result in subsets with poor<br>
+representative variability.</p>
+<p>Instead, we use a deterministic, periodic sampling method with a randomized offset. To maximize the size of the<br>
+training 💪 set, we select the development and test 🏆 subsets first. The training subset then consists of all remaining pages.</p>
+<p>Here's the per-category 🪧 procedure for selecting the development and test 🏆 sets:</p>
+<ol>
+<li>For the category of size <code class="notranslate">N</code> compute  the desired subset size, <code class="notranslate">k</code>, as a fixed proportion (<code class="notranslate">test_ratio</code> which was 10%) of <code class="notranslate">N</code></li>
+<li>Compute a selection step, <code class="notranslate">S</code>, as <code class="notranslate">S ≈ N/k</code> which serves a period base for the selection</li>
+<li>Apply a random shift to <code class="notranslate">S</code> - an integer index in the range <code class="notranslate">[S_i - S/4; S_i + S/4]</code> for every <code class="notranslate">i</code>-th of <code class="notranslate">k</code> steps of <code class="notranslate">S</code>.</li>
+<li>Select every <code class="notranslate">S</code>-th (<code class="notranslate">S</code>-thish in fact) element from the alphabetically ordered sequence after applying the random shift.</li>
+<li>Finally, Limit selected indices to be within the range of the category size <code class="notranslate">N</code>.</li>
+</ol>
+<p>This method produces subsets that:</p>
+<ul>
+<li>Respect the original ordering and local clustering in the data</li>
+<li>Preserve the proportional representation of each category</li>
+<li>Introduce controlled randomness, so the selected samples are not strictly periodic</li>
+</ul>
+<p>This ensures that our subsets cover the full chronological and structural variability of the<br>
+collection, leading to a more robust and reliable model evaluation. At the last stages, the whole<br>
+procedure was performed several times in terms of the cross-validation training, when each new fold<br>
+used a incremented by 1 random seed for the random shifts step.</p>
+<p><strong>Training</strong> 💪 set of the model: <strong>14565</strong> images for <code class="notranslate">vX.X</code></p>
+<p><strong>Training</strong> 💪 set of the model: <strong>38625</strong> images for <code class="notranslate">vX.X.3</code></p>
+<p>The training subsets above are followed by the test sets below:</p>
+<p><strong>Evaluation</strong> 🏆 set:  <strong>1290</strong> images for <code class="notranslate">vX.X</code> models</p>
+<p><strong>Evaluation</strong> 🏆 set:  <strong>4823</strong> images (for <code class="notranslate">vX.X.3</code> models)</p>
+<p>Manual ✍️ annotation was performed beforehand and took some time ⌛, the categories 🪧 tabulated  <a href="#categories-">below</a> were formed from<br>
 different sources of the archival documents originated in the 1920-2020 years span.</p>
+<markdown-accessiblity-table><table role="table">
+<thead>
+<tr>
+<th>Category</th>
+<th>Dataset 0</th>
+<th>Dataset 1</th>
+<th>Dataset 2</th>
+<th>Dataset 3</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>DRAW</td>
+<td>1090 (9.1%)</td>
+<td>1368 (8.8%)</td>
+<td>1472 (9.3%)</td>
+<td>2709 (5.6%)</td>
+</tr>
+<tr>
+<td>DRAW_L</td>
+<td>1091 (9.1%)</td>
+<td>1383 (8.9%)</td>
+<td>1402 (8.8%)</td>
+<td>2921 (6.0%)</td>
+</tr>
+<tr>
+<td>LINE_HW</td>
+<td>1055 (8.8%)</td>
+<td>1113 (7.2%)</td>
+<td>1115 (7.0%)</td>
+<td>2514 (5.2%)</td>
+</tr>
+<tr>
+<td>LINE_P</td>
+<td>1092 (9.1%)</td>
+<td>1540 (9.9%)</td>
+<td>1580 (10.0%)</td>
+<td>2439 (5.0%)</td>
+</tr>
+<tr>
+<td>LINE_T</td>
+<td>1098 (9.2%)</td>
+<td>1664 (10.7%)</td>
+<td>1668 (10.5%)</td>
+<td>9883 (20.4%)</td>
+</tr>
+<tr>
+<td>PHOTO</td>
+<td>1081 (9.1%)</td>
+<td>1632 (10.5%)</td>
+<td>1730 (10.9%)</td>
+<td>2691 (5.5%)</td>
+</tr>
+<tr>
+<td>PHOTO_L</td>
+<td>1087 (9.1%)</td>
+<td>1087 (7.0%)</td>
+<td>1088 (6.9%)</td>
+<td>2830 (5.8%)</td>
+</tr>
+<tr>
+<td>TEXT</td>
+<td>1091 (9.1%)</td>
+<td>1587 (10.3%)</td>
+<td>1592 (10.0%)</td>
+<td>14227 (29.3%)</td>
+</tr>
+<tr>
+<td>TEXT_HW</td>
+<td>1091 (9.1%)</td>
+<td>1092 (7.1%)</td>
+<td>1092 (6.9%)</td>
+<td>2008 (4.1%)</td>
+</tr>
+<tr>
+<td>TEXT_P</td>
+<td>1083 (9.1%)</td>
+<td>1540 (9.9%)</td>
+<td>1633 (10.3%)</td>
+<td>2312 (4.8%)</td>
+</tr>
+<tr>
+<td>TEXT_T</td>
+<td>1081 (9.1%)</td>
+<td>1476 (9.5%)</td>
+<td>1482 (9.3%)</td>
+<td>3965 (8.2%)</td>
+</tr>
+<tr>
+<td><strong>Unique PDFs</strong></td>
+<td>5001</td>
+<td>5694</td>
+<td>5729</td>
+<td>37328</td>
+</tr>
+<tr>
+<td><strong>Total Pages</strong></td>
+<td>11,940</td>
+<td>15,482</td>
+<td>15,854</td>
+<td>48,499</td>
+</tr>
+</tbody>
+</table></markdown-accessiblity-table>
+<p>The table above shows category distribution for different model versions, where the last column<br>
+(<code class="notranslate">Dataset 3</code>) corresponds to the latest <code class="notranslate">vX.X.3</code> models data, which actually used 14,000 pages of<br>
+<code class="notranslate">TEXT</code> category, while other columns cover all the used samples - specifically 80% as training 💪,<br>
+and 10% each as development and test 🏆 sets. The early model version used 90% of the data as training 💪<br>
+and the remaining 10% as both development and test 🏆 set due to the lack of annotated (manually<br>
+classified) pages.</p>
 <div class="markdown-alert markdown-alert-note"><p class="markdown-alert-title"><svg class="octicon octicon-info mr-2" viewBox="0 0 16 16" version="1.1" width="16" height="16" aria-hidden="true"><path d="M0 8a8 8 0 1 1 16 0A8 8 0 0 1 0 8Zm8-6.5a6.5 6.5 0 1 0 0 13 6.5 6.5 0 0 0 0-13ZM6.5 7.75A.75.75 0 0 1 7.25 7h1a.75.75 0 0 1 .75.75v2.75h.25a.75.75 0 0 1 0 1.5h-2a.75.75 0 0 1 0-1.5h.25v-2h-.25a.75.75 0 0 1-.75-.75ZM8 6a1 1 0 1 1 0-2 1 1 0 0 1 0 2Z"></path></svg>Note</p><p>Disproportion of the categories 🪧 in both training data and provided evaluation <a href="category_samples">category_samples</a> 📁 is<br>
 <strong>NOT</strong> intentional, but rather a result of the source data nature.</p>
 </div>
-<p>In total, several thousands of separate PDF files were selected and split into PNG pages, ~4k of scanned documents<br>
-were one-page long which covered around a third of all data, and ~2k of them were much longer (dozens and hundreds<br>
-of pages) covering the rest (more than 60% of all annotated data).</p>
 <p>The specific content and language of the<br>
 source data is irrelevant considering the model's vision resolution, however, all of the data samples were from <strong>archaeological<br>
 reports</strong> which may somehow affect the drawing detection preferences due to the common form of objects being ceramic pieces,<br>
 arrowheads, and rocks formerly drawn by hand and later illustrated with digital tools (examples can be found in<br>
 <a href="category_samples%2FDRAW">category_samples/DRAW</a> 📁)</p>
-<p><a target="_blank" rel="noopener noreferrer" href="dataset_timeline.png"><img src="dataset_timeline.png" alt="dataset_timeline" style="max-width: 100%;"></a></p>
+<p><a target="_blank" rel="noopener noreferrer" href="dataset_timeline.png"><img src="dataset_timeline.png" alt="data_timeline.png" style="max-width: 100%;"></a></p>
 <h3>Categories 🪧</h3>
 <markdown-accessiblity-table><table role="table">
 <thead>
@@ -263,7 +428,7 @@ which is also available as a testing subset of the training data.</p>
 <hr>
 <h2>How to install 🔧</h2>
 <p>Step-by-step instructions on this program installation are provided here. The easiest way to obtain the model would<br>
-be to use the HF 😊 hub repository <sup><a href="#user-content-fn-1-4e47fa72c02bd03bc3655fd848b4c1df" id="user-content-fnref-1-4-4e47fa72c02bd03bc3655fd848b4c1df" data-footnote-ref="" aria-describedby="footnote-label">1</a></sup> 🔗 that can be easily accessed via this project.</p>
+be to use the HF 😊 hub repository <sup><a href="#user-content-fn-1-b521c62d7f8b6cd097bbd2cf39b8f14d" id="user-content-fnref-1-4-b521c62d7f8b6cd097bbd2cf39b8f14d" data-footnote-ref="" aria-describedby="footnote-label">1</a></sup> 🔗 that can be easily accessed via this project.</p>
 <details>
 <summary>Hardware requirements 👀</summary>
 <p><strong>Minimal</strong> machine 🖥️ requirements for slow prediction run (and very slow training / evaluation):</p>
@@ -273,7 +438,7 @@ be to use the HF 😊 hub repository <sup><a href="#user-content-fn-1-4e47fa72c0
 <p><strong>Ideal</strong> machine 🖥️ requirements for fast prediction (and relatively fast training / evaluation):</p>
 <ul>
 <li><strong>CPU</strong> of some kind and memory size</li>
-<li><strong>GPU</strong> (for real CUDA <sup><a href="#user-content-fn-10-4e47fa72c02bd03bc3655fd848b4c1df" id="user-content-fnref-10-4e47fa72c02bd03bc3655fd848b4c1df" data-footnote-ref="" aria-describedby="footnote-label">7</a></sup> support - only one of Nvidia's cards)</li>
+<li><strong>GPU</strong> (for real CUDA <sup><a href="#user-content-fn-10-b521c62d7f8b6cd097bbd2cf39b8f14d" id="user-content-fnref-10-b521c62d7f8b6cd097bbd2cf39b8f14d" data-footnote-ref="" aria-describedby="footnote-label">7</a></sup> support - only one of Nvidia's cards)</li>
 </ul>
 </details>
 <div class="markdown-alert markdown-alert-warning"><p class="markdown-alert-title"><svg class="octicon octicon-alert mr-2" viewBox="0 0 16 16" version="1.1" width="16" height="16" aria-hidden="true"><path d="M6.457 1.047c.659-1.234 2.427-1.234 3.086 0l6.082 11.378A1.75 1.75 0 0 1 14.082 15H1.918a1.75 1.75 0 0 1-1.543-2.575Zm1.763.707a.25.25 0 0 0-.44 0L1.698 13.132a.25.25 0 0 0 .22.368h12.164a.25.25 0 0 0 .22-.368Zm.53 3.996v2.5a.75.75 0 0 1-1.5 0v-2.5a.75.75 0 0 1 1.5 0ZM9 11a1 1 0 1 1-2 0 1 1 0 0 1 2 0Z"></path></svg>Warning</p><p>Make sure you have <strong>Python version 3.10+</strong> installed on your machine 💻 and check its<br>
@@ -328,7 +493,7 @@ git checkout vit
 git reset --hard origin/vit
 </code></pre>
 <p>Next step would be a creation of the virtual environment. Follow the <strong>Unix</strong> / <strong>Windows</strong>-specific<br>
-instruction at the venv docs <sup><a href="#user-content-fn-3-4e47fa72c02bd03bc3655fd848b4c1df" id="user-content-fnref-3-4e47fa72c02bd03bc3655fd848b4c1df" data-footnote-ref="" aria-describedby="footnote-label">8</a></sup> 👀🔗 if you don't know how to.</p>
+instruction at the venv docs <sup><a href="#user-content-fn-3-b521c62d7f8b6cd097bbd2cf39b8f14d" id="user-content-fnref-3-b521c62d7f8b6cd097bbd2cf39b8f14d" data-footnote-ref="" aria-describedby="footnote-label">8</a></sup> 👀🔗 if you don't know how to.</p>
 <p>After creating the venv folder, activate the environment via:</p>
 <pre class="notranslate"><code class="notranslate">source &lt;your_venv_dir&gt;/bin/activate
 </code></pre>
@@ -340,7 +505,7 @@ of space for the Python libraries</strong> (Pytorch and its dependencies, etc)</
 <p>Installation of Python dependencies can be done via:</p>
 <pre class="notranslate"><code class="notranslate">pip install -r requirements.txt
 </code></pre>
-<div class="markdown-alert markdown-alert-note"><p class="markdown-alert-title"><svg class="octicon octicon-info mr-2" viewBox="0 0 16 16" version="1.1" width="16" height="16" aria-hidden="true"><path d="M0 8a8 8 0 1 1 16 0A8 8 0 0 1 0 8Zm8-6.5a6.5 6.5 0 1 0 0 13 6.5 6.5 0 0 0 0-13ZM6.5 7.75A.75.75 0 0 1 7.25 7h1a.75.75 0 0 1 .75.75v2.75h.25a.75.75 0 0 1 0 1.5h-2a.75.75 0 0 1 0-1.5h.25v-2h-.25a.75.75 0 0 1-.75-.75ZM8 6a1 1 0 1 1 0-2 1 1 0 0 1 0 2Z"></path></svg>Note</p><p>The so-called <strong>CUDA <sup><a href="#user-content-fn-10-4e47fa72c02bd03bc3655fd848b4c1df" id="user-content-fnref-10-2-4e47fa72c02bd03bc3655fd848b4c1df" data-footnote-ref="" aria-describedby="footnote-label">7</a></sup> support</strong> for Python's PyTorch library is supposed to be automatically installed<br>
+<div class="markdown-alert markdown-alert-note"><p class="markdown-alert-title"><svg class="octicon octicon-info mr-2" viewBox="0 0 16 16" version="1.1" width="16" height="16" aria-hidden="true"><path d="M0 8a8 8 0 1 1 16 0A8 8 0 0 1 0 8Zm8-6.5a6.5 6.5 0 1 0 0 13 6.5 6.5 0 0 0 0-13ZM6.5 7.75A.75.75 0 0 1 7.25 7h1a.75.75 0 0 1 .75.75v2.75h.25a.75.75 0 0 1 0 1.5h-2a.75.75 0 0 1 0-1.5h.25v-2h-.25a.75.75 0 0 1-.75-.75ZM8 6a1 1 0 1 1 0-2 1 1 0 0 1 0 2Z"></path></svg>Note</p><p>The so-called <strong>CUDA <sup><a href="#user-content-fn-10-b521c62d7f8b6cd097bbd2cf39b8f14d" id="user-content-fnref-10-2-b521c62d7f8b6cd097bbd2cf39b8f14d" data-footnote-ref="" aria-describedby="footnote-label">7</a></sup> support</strong> for Python's PyTorch library is supposed to be automatically installed<br>
 at this point - when the presence of the GPU on your machine 🖥️<br>
 is checked for the first time, later it's also checked every time before the model initialization<br>
 (for training, evaluation or prediction run).</p>
@@ -352,19 +517,19 @@ descriptions call for <code class="notranslate">--help</code> ❓:</p>
 <pre class="notranslate"><code class="notranslate">python3 run.py -h
 </code></pre>
 <p>You should see a (hopefully) helpful message about all available command line flags. Your next step would be<br>
-to <strong>pull the model from the HF 😊 hub repository <sup><a href="#user-content-fn-1-4e47fa72c02bd03bc3655fd848b4c1df" id="user-content-fnref-1-5-4e47fa72c02bd03bc3655fd848b4c1df" data-footnote-ref="" aria-describedby="footnote-label">1</a></sup> 🔗</strong> via:</p>
+to <strong>pull the model from the HF 😊 hub repository <sup><a href="#user-content-fn-1-b521c62d7f8b6cd097bbd2cf39b8f14d" id="user-content-fnref-1-5-b521c62d7f8b6cd097bbd2cf39b8f14d" data-footnote-ref="" aria-describedby="footnote-label">1</a></sup> 🔗</strong> via:</p>
 <pre class="notranslate"><code class="notranslate">python3 run.py --hf
 </code></pre>
-<p><strong>OR</strong> for specific model version (e.g. <code class="notranslate">main</code>, <code class="notranslate">vX.1</code> or <code class="notranslate">vX.2</code>) use the <code class="notranslate">--revision</code> flag:</p>
+<p><strong>OR</strong> for specific model version (e.g. <code class="notranslate">main</code>, <code class="notranslate">vX.1</code>, <code class="notranslate">vX.2</code> and <code class="notranslate">vX.X.3</code>) use the <code class="notranslate">--revision</code> flag:</p>
 <pre class="notranslate"><code class="notranslate">python3 run.py --hf -rev v1.1
 </code></pre>
-<p><strong>OR</strong> for specific base model version (e.g. <code class="notranslate">ViT-B/16</code>, <code class="notranslate">ViT-B/32</code>, <code class="notranslate">ViT-L/14</code> or <code class="notranslate">ViT-L/14@336px</code>) use the <code class="notranslate">--base</code> flag (only when the<br>
-trained model version demands such base model as described <a href="#versions-">above</a>):</p>
-<pre class="notranslate"><code class="notranslate">python3 run.py --hf -rev v2.2 -m `ViT-L/14@336`
+<p><strong>OR</strong> for specific base model version (e.g. <code class="notranslate">ViT-B/16</code>, <code class="notranslate">ViT-B/32</code>, <code class="notranslate">ViT-L/14</code> or <code class="notranslate">ViT-L/14@336px</code>) use the <code class="notranslate">--model</code><br>
+or <code class="notranslate">-m</code> flag (only when the trained model version demands such base model as described <a href="#versions-">above</a>):</p>
+<pre class="notranslate"><code class="notranslate">python3 run.py --hf -rev v2.2.3 -m `ViT-L/14@336px`
 </code></pre>
 <div class="markdown-alert markdown-alert-important"><p class="markdown-alert-title"><svg class="octicon octicon-report mr-2" viewBox="0 0 16 16" version="1.1" width="16" height="16" aria-hidden="true"><path d="M0 1.75C0 .784.784 0 1.75 0h12.5C15.216 0 16 .784 16 1.75v9.5A1.75 1.75 0 0 1 14.25 13H8.06l-2.573 2.573A1.458 1.458 0 0 1 3 14.543V13H1.75A1.75 1.75 0 0 1 0 11.25Zm1.75-.25a.25.25 0 0 0-.25.25v9.5c0 .138.112.25.25.25h2a.75.75 0 0 1 .75.75v2.19l2.72-2.72a.749.749 0 0 1 .53-.22h6.5a.25.25 0 0 0 .25-.25v-9.5a.25.25 0 0 0-.25-.25Zm7 2.25v2.5a.75.75 0 0 1-1.5 0v-2.5a.75.75 0 0 1 1.5 0ZM9 9a1 1 0 1 1-2 0 1 1 0 0 1 2 0Z"></path></svg>Important</p><p>If you already have the model files in the <code class="notranslate">model/movel_&lt;revision&gt;</code><br>
 directory next to this file, you do <strong>NOT</strong> have to use the <code class="notranslate">--hf</code> flag to download the<br>
-model files from the HF 😊 repo <sup><a href="#user-content-fn-1-4e47fa72c02bd03bc3655fd848b4c1df" id="user-content-fnref-1-6-4e47fa72c02bd03bc3655fd848b4c1df" data-footnote-ref="" aria-describedby="footnote-label">1</a></sup> 🔗 (only for the <strong>model version update</strong>).</p>
+model files from the HF 😊 repo <sup><a href="#user-content-fn-1-b521c62d7f8b6cd097bbd2cf39b8f14d" id="user-content-fnref-1-6-b521c62d7f8b6cd097bbd2cf39b8f14d" data-footnote-ref="" aria-describedby="footnote-label">1</a></sup> 🔗 (only for the <strong>model version update</strong>).</p>
 </div>
 <p>You should see a message about loading the model from the hub and then saving it locally on<br>
 your machine 🖥️.</p>
@@ -409,6 +574,7 @@ you can play with any commands provided <a href="#how-to-run-prediction--modes">
     └── ...
 ├── run.py
 ├── classifier.py
+├── minor_classes.py
 ├── utils.py
 ├── requirements.txt
 ├── config.txt
@@ -546,16 +712,13 @@ the hardware's memory capacity requirements for different batch sizes tabulated 
 <p><strong>OR</strong> if you are really sure about default variables set in the <a href="config.txt">config.txt</a> ⚙:</p>
 <pre class="notranslate"><code class="notranslate">python3 run.py --dir 
 
-python3 run.py -rev v2.2 -m ViT-B/15 --dir
+python3 run.py -rev v1.2 -m ViT-B/32 --dir
 </code></pre>
 </details>
 <p>The classification results of PNG pages collected from the directory will be saved 💾 to related <a href="result">results</a> 📁<br>
 folders defined in <code class="notranslate">[OUTPUT]</code> section of <a href="config.txt">config.txt</a> ⚙ file.</p>
 <div class="markdown-alert markdown-alert-tip"><p class="markdown-alert-title"><svg class="octicon octicon-light-bulb mr-2" viewBox="0 0 16 16" version="1.1" width="16" height="16" aria-hidden="true"><path d="M8 1.5c-2.363 0-4 1.69-4 3.75 0 .984.424 1.625.984 2.304l.214.253c.223.264.47.556.673.848.284.411.537.896.621 1.49a.75.75 0 0 1-1.484.211c-.04-.282-.163-.547-.37-.847a8.456 8.456 0 0 0-.542-.68c-.084-.1-.173-.205-.268-.32C3.201 7.75 2.5 6.766 2.5 5.25 2.5 2.31 4.863 0 8 0s5.5 2.31 5.5 5.25c0 1.516-.701 2.5-1.328 3.259-.095.115-.184.22-.268.319-.207.245-.383.453-.541.681-.208.3-.33.565-.37.847a.751.751 0 0 1-1.485-.212c.084-.593.337-1.078.621-1.489.203-.292.45-.584.673-.848.075-.088.147-.173.213-.253.561-.679.985-1.32.985-2.304 0-2.06-1.637-3.75-4-3.75ZM5.75 12h4.5a.75.75 0 0 1 0 1.5h-4.5a.75.75 0 0 1 0-1.5ZM6 15.25a.75.75 0 0 1 .75-.75h2.5a.75.75 0 0 1 0 1.5h-2.5a.75.75 0 0 1-.75-.75Z"></path></svg>Tip</p><p>To additionally get raw class 🪧 probabilities from the model along with the TOP-N results, use<br>
 <code class="notranslate">--raw</code> flag when processing the directory (<strong>NOT</strong> available for single file processing)</p>
-</div>
-<div class="markdown-alert markdown-alert-tip"><p class="markdown-alert-title"><svg class="octicon octicon-light-bulb mr-2" viewBox="0 0 16 16" version="1.1" width="16" height="16" aria-hidden="true"><path d="M8 1.5c-2.363 0-4 1.69-4 3.75 0 .984.424 1.625.984 2.304l.214.253c.223.264.47.556.673.848.284.411.537.896.621 1.49a.75.75 0 0 1-1.484.211c-.04-.282-.163-.547-.37-.847a8.456 8.456 0 0 0-.542-.68c-.084-.1-.173-.205-.268-.32C3.201 7.75 2.5 6.766 2.5 5.25 2.5 2.31 4.863 0 8 0s5.5 2.31 5.5 5.25c0 1.516-.701 2.5-1.328 3.259-.095.115-.184.22-.268.319-.207.245-.383.453-.541.681-.208.3-.33.565-.37.847a.751.751 0 0 1-1.485-.212c.084-.593.337-1.078.621-1.489.203-.292.45-.584.673-.848.075-.088.147-.173.213-.253.561-.679.985-1.32.985-2.304 0-2.06-1.637-3.75-4-3.75ZM5.75 12h4.5a.75.75 0 0 1 0 1.5h-4.5a.75.75 0 0 1 0-1.5ZM6 15.25a.75.75 0 0 1 .75-.75h2.5a.75.75 0 0 1 0 1.5h-2.5a.75.75 0 0 1-.75-.75Z"></path></svg>Tip</p><p>To process all PNG files in the directory <strong>AND its subdirectories</strong> use the <code class="notranslate">--inner</code> flag<br>
-when processing the directory, or switch its default value to <code class="notranslate">True</code> in the <code class="notranslate">[SETUP]</code> section</p>
 </div>
 <p>Naturally, processing of the large amount of PNG pages takes time ⌛ and progress of this process<br>
 is recorded in the console via messages like <code class="notranslate">Processed &lt;B×N&gt; images</code> where <code class="notranslate">B</code><br>
@@ -568,25 +731,25 @@ saved 💾 in the <code class="notranslate">result/tables</code> folder.</p>
 <p>There are accuracy performance measurements and plots of confusion matrices for the evaluation<br>
 dataset (10% of the provided in <code class="notranslate">[TRAIN]</code>'s folder data). Both graphic plots and tables with<br>
 results can be found in the <a href="result">result</a> 📁 folder.</p>
-<p><code class="notranslate">v1.1</code> Evaluation set's accuracy (<strong>Top-1</strong>):  <strong>100.00%</strong> 🏆</p>
+<p><code class="notranslate">v1.1.3</code> Evaluation set's accuracy (<strong>Top-1</strong>):  <strong>99.14%</strong> 🏆</p>
 <details>
 <summary>Confusion matrix 📊 TOP-1 👀</summary>
-<p><a target="_blank" rel="noopener noreferrer" href="result%2Fplots%2Fconf_1n_2000c_ViTB16_20250701-1423.png"><img src="result%2Fplots%2Fconf_1n_2000c_ViTB16_20250701-1423.png" alt="TOP-1 confusion matrix" style="max-width: 100%;"></a></p>
+<p><a target="_blank" rel="noopener noreferrer" href="result%2Fplots%2F20251020-1735_5449_EVAL_conf_1n_Nonec_ViT-B16_v1137.png"><img src="result%2Fplots%2F20251020-1735_5449_EVAL_conf_1n_Nonec_ViT-B16_v1137.png" alt="TOP-1 confusion matrix" style="max-width: 100%;"></a></p>
 </details>
-<p><code class="notranslate">v1.2</code> Evaluation set's accuracy (<strong>Top-1</strong>):  <strong>100.00%</strong> 🏆</p>
+<p><code class="notranslate">v1.2.3</code> Evaluation set's accuracy (<strong>Top-1</strong>):  <strong>98.99%</strong> 🏆</p>
 <details>
 <summary>Confusion matrix 📊 TOP-1 👀</summary>
-<p><a target="_blank" rel="noopener noreferrer" href="result%2Fplots%2Fconf_1n_2000c_ViTB32_20250701-1426.png"><img src="result%2Fplots%2Fconf_1n_2000c_ViTB32_20250701-1426.png" alt="TOP-1 confusion matrix" style="max-width: 100%;"></a></p>
+<p><a target="_blank" rel="noopener noreferrer" href="result%2Fplots%2F20251020-1918_5449_EVAL_conf_1n_Nonec_ViT-B32_v123.png"><img src="result%2Fplots%2F20251020-1918_5449_EVAL_conf_1n_Nonec_ViT-B32_v123.png" alt="TOP-1 confusion matrix" style="max-width: 100%;"></a></p>
 </details>
-<p><code class="notranslate">v2.1</code> Evaluation set's accuracy (<strong>Top-1</strong>):  <strong>99.94%</strong> 🏆</p>
+<p><code class="notranslate">v2.1.3</code> Evaluation set's accuracy (<strong>Top-1</strong>):  <strong>98.97%</strong> 🏆</p>
 <details>
 <summary>Confusion matrix 📊 TOP-1 👀</summary>
-<p><a target="_blank" rel="noopener noreferrer" href="result%2Fplots%2Fconf_1n_2000c_ViTL14_20250701-1422.png"><img src="result%2Fplots%2Fconf_1n_2000c_ViTL14_20250701-1422.png" alt="TOP-1 confusion matrix" style="max-width: 100%;"></a></p>
+<p><a target="_blank" rel="noopener noreferrer" href="result%2Fplots%2F20251020-2050_5449_EVAL_conf_1n_Nonec_ViT-L14_v2131.png"><img src="result%2Fplots%2F20251020-2050_5449_EVAL_conf_1n_Nonec_ViT-L14_v2131.png" alt="TOP-1 confusion matrix" style="max-width: 100%;"></a></p>
 </details>
-<p><code class="notranslate">v2.2</code> Evaluation set's accuracy (<strong>Top-1</strong>):  <strong>99.87%</strong> 🏆</p>
+<p><code class="notranslate">v2.2.3</code> Evaluation set's accuracy (<strong>Top-1</strong>):  <strong>98.97%</strong> 🏆</p>
 <details>
 <summary>Confusion matrix 📊 TOP-1 👀</summary>
-<p><a target="_blank" rel="noopener noreferrer" href="result%2Fplots%2Fconf_1n_2000c_ViTL14336px_20250701-1417.png"><img src="result%2Fplots%2Fconf_1n_2000c_ViTL14336px_20250701-1417.png" alt="TOP-1 confusion matrix" style="max-width: 100%;"></a></p>
+<p><a target="_blank" rel="noopener noreferrer" href="result%2Fplots%2F20251020-1956_5449_EVAL_conf_1n_Nonec_ViT-L14-336px_v2234.png"><img src="result%2Fplots%2F20251020-1956_5449_EVAL_conf_1n_Nonec_ViT-L14-336px_v2234.png" alt="TOP-1 confusion matrix" style="max-width: 100%;"></a></p>
 </details>
 <blockquote>
 <p><strong>Confusion matrices</strong> provided above show the diagonal of matching gold and predicted categories 🪧<br>
@@ -606,37 +769,37 @@ while their off-diagonal elements show inter-class errors. By those graphs you c
 <h3>Result tables and their columns 📏📋</h3>
 <details>
 <summary>General result tables 👀</summary>
-<p>Demo files  <code class="notranslate">v1.1</code>:</p>
+<p>Demo files  <code class="notranslate">v1.1.3</code>:</p>
 <ul>
 <li>
-<p>Manually ✍️ <strong>checked</strong> evaluation dataset (TOP-1): <a href="result%2Ftables%2FEVAL_table_1n_2000c_ViTB16_20250701-2159.csv">model_TOP-1_EVAL.csv</a> 📎</p>
+<p>Manually ✍️ <strong>checked</strong> evaluation dataset (TOP-1): <a href="result%2Ftables%2F20251021-2349_5449_EVAL_table_1n_Nonec_ViT-B16_v1137.csv">model_TOP-1_EVAL.csv</a> 📎</p>
 </li>
 <li>
 <p><strong>Unchecked with TRUE</strong> values (small): <a href="result%2Ftables%2Fresult_20250701-1816_ViT-B16_1n_2000c.csv">model_TOP-1.csv</a>📎</p>
 </li>
 </ul>
-<p>Demo files  <code class="notranslate">v1.2</code>:</p>
+<p>Demo files  <code class="notranslate">v1.2.3</code>:</p>
 <ul>
 <li>
-<p>Manually ✍️ <strong>checked</strong> evaluation dataset (TOP-1): <a href="result%2Ftables%2FEVAL_table_1n_2000c_ViTB32_20250701-2207.csv">model_TOP-1_EVAL.csv</a> 📎</p>
+<p>Manually ✍️ <strong>checked</strong> evaluation dataset (TOP-1): <a href="result%2Ftables%2F20251020-1918_5449_EVAL_table_1n_Nonec_ViT-B32_v123.csv">model_TOP-1_EVAL.csv</a> 📎</p>
 </li>
 <li>
 <p><strong>Unchecked with TRUE</strong> values (small): <a href="result%2Ftables%2Fresult_20250701-2216_ViT-B32_1n_2000c.csv">model_TOP-1.csv</a>📎</p>
 </li>
 </ul>
-<p>Demo files  <code class="notranslate">v2.1</code>:</p>
+<p>Demo files  <code class="notranslate">v2.1.3</code>:</p>
 <ul>
 <li>
-<p>Manually ✍️ <strong>checked</strong> evaluation dataset (TOP-1): <a href="result%2Ftables%2FEVAL_table_1n_2000c_ViTL14_20250701-2129.csv">model_TOP-1_EVAL.csv</a> 📎</p>
+<p>Manually ✍️ <strong>checked</strong> evaluation dataset (TOP-1): <a href="result%2Ftables%2F20251020-2050_5449_EVAL_table_1n_Nonec_ViT-L14_v2131.csv">model_TOP-1_EVAL.csv</a> 📎</p>
 </li>
 <li>
 <p><strong>Unchecked with TRUE</strong> values (small): <a href="result%2Ftables%2Fresult_20250701-1742_ViT-L14_1n_2000c.csv">model_TOP-1.csv</a>📎</p>
 </li>
 </ul>
-<p>Demo files  <code class="notranslate">v2.2</code>:</p>
+<p>Demo files  <code class="notranslate">v2.2.3</code>:</p>
 <ul>
 <li>
-<p>Manually ✍️ <strong>checked</strong> evaluation dataset (TOP-1): <a href="result%2Ftables%2FEVAL_table_1n_2000c_ViTL14336px_20250701-2150.csv">model_TOP-1_EVAL.csv</a> 📎</p>
+<p>Manually ✍️ <strong>checked</strong> evaluation dataset (TOP-1): <a href="result%2Ftables%2F20251020-1956_5449_EVAL_table_1n_Nonec_ViT-L14-336px_v2234.csv">model_TOP-1_EVAL.csv</a> 📎</p>
 </li>
 <li>
 <p>Manually ✍️ <strong>checked</strong> evaluation dataset (TOP-5): <a href="result%2Ftables%2FEVAL_table_5n_2000c_ViTL14336px_20250702-0852.csv">model_TOP-5_EVAL.csv</a> 📎</p>
@@ -700,8 +863,8 @@ their functionality remains the same</p>
 </div>
 <p>On <strong>Windows</strong> you must also install the following software before converting PDF documents to PNG images:</p>
 <ul>
-<li>ImageMagick <sup><a href="#user-content-fn-5-4e47fa72c02bd03bc3655fd848b4c1df" id="user-content-fnref-5-4e47fa72c02bd03bc3655fd848b4c1df" data-footnote-ref="" aria-describedby="footnote-label">9</a></sup> 🔗 - download and install the latest version</li>
-<li>Ghostscript <sup><a href="#user-content-fn-6-4e47fa72c02bd03bc3655fd848b4c1df" id="user-content-fnref-6-4e47fa72c02bd03bc3655fd848b4c1df" data-footnote-ref="" aria-describedby="footnote-label">10</a></sup> 🔗 - download and install the latest version (32 or 64-bit) by AGPL</li>
+<li>ImageMagick <sup><a href="#user-content-fn-5-b521c62d7f8b6cd097bbd2cf39b8f14d" id="user-content-fnref-5-b521c62d7f8b6cd097bbd2cf39b8f14d" data-footnote-ref="" aria-describedby="footnote-label">9</a></sup> 🔗 - download and install the latest version</li>
+<li>Ghostscript <sup><a href="#user-content-fn-6-b521c62d7f8b6cd097bbd2cf39b8f14d" id="user-content-fnref-6-b521c62d7f8b6cd097bbd2cf39b8f14d" data-footnote-ref="" aria-describedby="footnote-label">10</a></sup> 🔗 - download and install the latest version (32 or 64-bit) by AGPL</li>
 </ul>
 <h3>PDF to PNG 📚</h3>
 <p>The source set of PDF documents must be converted to page-specific PNG images before processing. The following steps<br>
@@ -752,7 +915,7 @@ containing page-specific images with a similar structure:</p>
 </code></pre>
 </details>
 <div class="markdown-alert markdown-alert-note"><p class="markdown-alert-title"><svg class="octicon octicon-info mr-2" viewBox="0 0 16 16" version="1.1" width="16" height="16" aria-hidden="true"><path d="M0 8a8 8 0 1 1 16 0A8 8 0 0 1 0 8Zm8-6.5a6.5 6.5 0 1 0 0 13 6.5 6.5 0 0 0 0-13ZM6.5 7.75A.75.75 0 0 1 7.25 7h1a.75.75 0 0 1 .75.75v2.75h.25a.75.75 0 0 1 0 1.5h-2a.75.75 0 0 1 0-1.5h.25v-2h-.25a.75.75 0 0 1-.75-.75ZM8 6a1 1 0 1 1 0-2 1 1 0 0 1 0 2Z"></path></svg>Note</p><p>The page numbers are padded with zeros (on the left) to match the length of the last page number in each PDF file,<br>
-this is done automatically by the pdftoppm command used on <strong>Unix</strong>. While ImageMagick's <sup><a href="#user-content-fn-5-4e47fa72c02bd03bc3655fd848b4c1df" id="user-content-fnref-5-2-4e47fa72c02bd03bc3655fd848b4c1df" data-footnote-ref="" aria-describedby="footnote-label">9</a></sup> 🔗 convert command used<br>
+this is done automatically by the pdftoppm command used on <strong>Unix</strong>. While ImageMagick's <sup><a href="#user-content-fn-5-b521c62d7f8b6cd097bbd2cf39b8f14d" id="user-content-fnref-5-2-b521c62d7f8b6cd097bbd2cf39b8f14d" data-footnote-ref="" aria-describedby="footnote-label">9</a></sup> 🔗 convert command used<br>
 on <strong>Windows</strong> does <strong>NOT</strong> pad the page numbers.</p>
 </div>
 <details>
@@ -805,7 +968,7 @@ These changes are cared for in the next <a href="data_scripts%2Funix%2Fsort.sh">
 <div class="markdown-alert markdown-alert-tip"><p class="markdown-alert-title"><svg class="octicon octicon-light-bulb mr-2" viewBox="0 0 16 16" version="1.1" width="16" height="16" aria-hidden="true"><path d="M8 1.5c-2.363 0-4 1.69-4 3.75 0 .984.424 1.625.984 2.304l.214.253c.223.264.47.556.673.848.284.411.537.896.621 1.49a.75.75 0 0 1-1.484.211c-.04-.282-.163-.547-.37-.847a8.456 8.456 0 0 0-.542-.68c-.084-.1-.173-.205-.268-.32C3.201 7.75 2.5 6.766 2.5 5.25 2.5 2.31 4.863 0 8 0s5.5 2.31 5.5 5.25c0 1.516-.701 2.5-1.328 3.259-.095.115-.184.22-.268.319-.207.245-.383.453-.541.681-.208.3-.33.565-.37.847a.751.751 0 0 1-1.485-.212c.084-.593.337-1.078.621-1.489.203-.292.45-.584.673-.848.075-.088.147-.173.213-.253.561-.679.985-1.32.985-2.304 0-2.06-1.637-3.75-4-3.75ZM5.75 12h4.5a.75.75 0 0 1 0 1.5h-4.5a.75.75 0 0 1 0-1.5ZM6 15.25a.75.75 0 0 1 .75-.75h2.5a.75.75 0 0 1 0 1.5h-2.5a.75.75 0 0 1-.75-.75Z"></path></svg>Tip</p><p>Prepare equal-in-size categories 🪧 if possible, so that the model will not be biased towards the over-represented labels 🪧</p>
 </div>
 <p>For <strong>Windows</strong> users, it's <strong>NOT</strong> recommended to use MS Excel for writing CSV tables, the free<br>
-alternative may be Apache's OpenOffice <sup><a href="#user-content-fn-9-4e47fa72c02bd03bc3655fd848b4c1df" id="user-content-fnref-9-4e47fa72c02bd03bc3655fd848b4c1df" data-footnote-ref="" aria-describedby="footnote-label">11</a></sup> 🔗. As for <strong>Unix</strong> users, the default LibreCalc should be enough to<br>
+alternative may be Apache's OpenOffice <sup><a href="#user-content-fn-9-b521c62d7f8b6cd097bbd2cf39b8f14d" id="user-content-fnref-9-b521c62d7f8b6cd097bbd2cf39b8f14d" data-footnote-ref="" aria-describedby="footnote-label">11</a></sup> 🔗. As for <strong>Unix</strong> users, the default LibreCalc should be enough to<br>
 correctly write a comma-separated CSV table.</p>
 <details>
 <summary>Table in .csv format example 👀</summary>
@@ -892,6 +1055,10 @@ the key phases of the whole process (settings, training, evaluation) is provided
 <td>Model-specific classes and related functions including predefined values for training arguments</td>
 </tr>
 <tr>
+<td><code class="notranslate">minor_classses.py</code></td>
+<td>Adjacent functions and support classes</td>
+</tr>
+<tr>
 <td><code class="notranslate">utils.py</code></td>
 <td>Task-related algorithms</td>
 </tr>
@@ -921,7 +1088,7 @@ label names and replace the default categories 🪧 list</p>
 <p>Device 🖥️ requirements for training / evaluation:</p>
 <ul>
 <li><strong>CPU</strong> of some kind and memory size</li>
-<li><strong>GPU</strong> (for real CUDA <sup><a href="#user-content-fn-10-4e47fa72c02bd03bc3655fd848b4c1df" id="user-content-fnref-10-3-4e47fa72c02bd03bc3655fd848b4c1df" data-footnote-ref="" aria-describedby="footnote-label">7</a></sup> support - better one of Nvidia's cards)</li>
+<li><strong>GPU</strong> (for real CUDA <sup><a href="#user-content-fn-10-b521c62d7f8b6cd097bbd2cf39b8f14d" id="user-content-fnref-10-3-b521c62d7f8b6cd097bbd2cf39b8f14d" data-footnote-ref="" aria-describedby="footnote-label">7</a></sup> support - better one of Nvidia's cards)</li>
 </ul>
 <p>Worth mentioning that the efficient training is possible only with a CUDA-compatible GPU card.</p>
 <details>
@@ -985,7 +1152,7 @@ for the same task on an expanded (or new) dataset of document pages, even number
 <li>metric_for_best_model "accuracy"</li>
 </ul>
 </details>
-<p>Above are the default hyperparameters or TrainingArguments <sup><a href="#user-content-fn-11-4e47fa72c02bd03bc3655fd848b4c1df" id="user-content-fnref-11-4e47fa72c02bd03bc3655fd848b4c1df" data-footnote-ref="" aria-describedby="footnote-label">12</a></sup> used in the training process that can be partially<br>
+<p>Above are the default hyperparameters or TrainingArguments <sup><a href="#user-content-fn-11-b521c62d7f8b6cd097bbd2cf39b8f14d" id="user-content-fnref-11-b521c62d7f8b6cd097bbd2cf39b8f14d" data-footnote-ref="" aria-describedby="footnote-label">12</a></sup> used in the training process that can be partially<br>
 (only <code class="notranslate">epoch</code> and <code class="notranslate">log_step</code>) changed in the <code class="notranslate">[TRAIN]</code> section, plus <code class="notranslate">batch</code> in the <code class="notranslate">[SETUP]</code>section,<br>
 of the <a href="config.txt">config.txt</a> ⚙ file. Importantly, <code class="notranslate">avg</code> - average configuration of all texts can be used.</p>
 <div class="markdown-alert markdown-alert-important"><p class="markdown-alert-title"><svg class="octicon octicon-report mr-2" viewBox="0 0 16 16" version="1.1" width="16" height="16" aria-hidden="true"><path d="M0 1.75C0 .784.784 0 1.75 0h12.5C15.216 0 16 .784 16 1.75v9.5A1.75 1.75 0 0 1 14.25 13H8.06l-2.573 2.573A1.458 1.458 0 0 1 3 14.543V13H1.75A1.75 1.75 0 0 1 0 11.25Zm1.75-.25a.25.25 0 0 0-.25.25v9.5c0 .138.112.25.25.25h2a.75.75 0 0 1 .75.75v2.19l2.72-2.72a.749.749 0 0 1 .53-.22h6.5a.25.25 0 0 0 .25-.25v-9.5a.25.25 0 0 0-.25-.25Zm7 2.25v2.5a.75.75 0 0 1-1.5 0v-2.5a.75.75 0 0 1 1.5 0ZM9 9a1 1 0 1 1-2 0 1 1 0 0 1 2 0Z"></path></svg>Important</p><p>CLIP models accept not only images but also text inputs, in our case its <a href="category_description_total.tsv">descriptions.tsv</a> 📎 file<br>
@@ -994,10 +1161,17 @@ with only a single table of category 🪧 descriptions (via <code class="notrans
 category 🪧 descriptions in the <code class="notranslate">description_folder</code> starting with the <code class="notranslate">categories_prefix</code> value.</p>
 </div>
 <p>In case your descriptions table contains <strong>more than 1 text per category 🪧</strong>, the <code class="notranslate">--avg</code> flag will be set to <code class="notranslate">True</code> automatically.</p>
-<p><a href="descriptions_comparison.png">descriptions_comparison_graph.png</a> 📎 is a graph containing separate and averaged results<br>
-of all category 🪧 descriptions. Using averaged text embeddings of all label description seems to be the most powerful way to<br>
-classify our images.</p>
-<p><a target="_blank" rel="noopener noreferrer" href="descriptions_comparison.png"><img src="descriptions_comparison.png" alt="description comparison graph" style="max-width: 100%;"></a></p>
+<p><a href="result%2Fstats%2Fmodel_accuracy_plot.png">descriptions_comparison_graph.png</a> 📎 is a graph containing separate and averaged results<br>
+of all category 🪧 descriptions. Using averaged text embeddings of all label description seemed to be the most powerful way to<br>
+classify our images based on the zero-shot evaluations.</p>
+<p><a target="_blank" rel="noopener noreferrer" href="result%2Fstats%2Fmodel_accuracy_plot_zero.png"><img src="result%2Fstats%2Fmodel_accuracy_plot_zero.png" alt="description comparison graph_zero" style="max-width: 100%;"></a></p>
+<p>As the following experiments showed, the averaging strategy is not the best. Moreover, the smallest model<br>
+ViT-B/16 showed the best results after separately fine-tuning model on some category 🪧 sets.</p>
+<p><a target="_blank" rel="noopener noreferrer" href="result%2Fstats%2Fmodel_accuracy_plot.png"><img src="result%2Fstats%2Fmodel_accuracy_plot.png" alt="description comparison graph" style="max-width: 100%;"></a></p>
+<p>Check out all of the prepared category 🪧 descriptions in the <a href="category_descriptions">category_descriptions</a> 📁 folder.<br>
+Which supports versions mapping from 1 to 9 for the csv files starting with <code class="notranslate">page_categories_</code> prefix. The separate set<br>
+starting with <code class="notranslate">TOTAL</code> is a mixture of all category descriptions, a set starting with <code class="notranslate">GENERAL</code> is a simplified category 🪧 set<br>
+(only 4 classes), and a set starting with <code class="notranslate">EXPANDED</code> is an experimental more fine-grained in categories version of the category 🪧 descriptions.</p>
 <blockquote>
 <p>You are free to play with the <strong>learning rate</strong> right in the training function arguments called in the <a href="run.py">run.py</a> 📎 file,<br>
 yet <strong>warmup ratio and other hyperparameters</strong> are accessible only through the <a href="classifier.py">classifier.py</a> 📎 file.</p>
@@ -1008,7 +1182,7 @@ values by the end of the 3rd (last by default) epoch.</p>
 <p>In the case <strong>evaluation 🏆 loss</strong> starts to steadily going up after the previous descend, this means<br>
 you have reached the limit of worthy epochs, and next time you should set <code class="notranslate">epochs</code> to the<br>
 number of epoch that has successfully ended before you noticed the evaluation loss growth.</p>
-<p>During training image transformations <sup><a href="#user-content-fn-12-4e47fa72c02bd03bc3655fd848b4c1df" id="user-content-fnref-12-4e47fa72c02bd03bc3655fd848b4c1df" data-footnote-ref="" aria-describedby="footnote-label">13</a></sup> are applied sequentially with a 50% chance.</p>
+<p>During training image transformations <sup><a href="#user-content-fn-12-b521c62d7f8b6cd097bbd2cf39b8f14d" id="user-content-fnref-12-b521c62d7f8b6cd097bbd2cf39b8f14d" data-footnote-ref="" aria-describedby="footnote-label">13</a></sup> are applied sequentially with a 50% chance.</p>
 <div class="markdown-alert markdown-alert-note"><p class="markdown-alert-title"><svg class="octicon octicon-info mr-2" viewBox="0 0 16 16" version="1.1" width="16" height="16" aria-hidden="true"><path d="M0 8a8 8 0 1 1 16 0A8 8 0 0 1 0 8Zm8-6.5a6.5 6.5 0 1 0 0 13 6.5 6.5 0 0 0 0-13ZM6.5 7.75A.75.75 0 0 1 7.25 7h1a.75.75 0 0 1 .75.75v2.75h.25a.75.75 0 0 1 0 1.5h-2a.75.75 0 0 1 0-1.5h.25v-2h-.25a.75.75 0 0 1-.75-.75ZM8 6a1 1 0 1 1 0-2 1 1 0 0 1 0 2Z"></path></svg>Note</p><p>No rotation, reshaping, or flipping was applied to the images, mainly color manipulations were used. The<br>
 reason behind this are pages containing specific form types, general text orientation on the pages, and the default<br>
 reshape of the model input to the square 224x224 (or 336x336) resolution images.</p>
@@ -1024,7 +1198,7 @@ reshape of the model input to the square 224x224 (or 336x336) resolution images.
 <li>transforms.Lambda(lambda img: img.filter(ImageFilter.<strong>GaussianBlur</strong>(radius=random.uniform(0, 2))))</li>
 </ul>
 </details>
-<p>More about selecting the image transformation and the available ones you can read in the PyTorch torchvision docs <sup><a href="#user-content-fn-12-4e47fa72c02bd03bc3655fd848b4c1df" id="user-content-fnref-12-2-4e47fa72c02bd03bc3655fd848b4c1df" data-footnote-ref="" aria-describedby="footnote-label">13</a></sup>.</p>
+<p>More about selecting the image transformation and the available ones you can read in the PyTorch torchvision docs <sup><a href="#user-content-fn-12-b521c62d7f8b6cd097bbd2cf39b8f14d" id="user-content-fnref-12-2-b521c62d7f8b6cd097bbd2cf39b8f14d" data-footnote-ref="" aria-describedby="footnote-label">13</a></sup>.</p>
 <p>After training is complete the model will be saved 💾 to its separate subdirectory in the <code class="notranslate">model</code> directory, by default,<br>
 the <strong>naming of the model folder</strong> corresponds to the length of its training batch dataloader and the number of epochs -<br>
 for example <code class="notranslate">model_&lt;S/B&gt;_E</code> where <code class="notranslate">E</code> is the number of epochs, <code class="notranslate">B</code> is the batch size, and <code class="notranslate">S</code> is the size of your<br>
@@ -1066,7 +1240,7 @@ for example <code class="notranslate">model_&lt;S/B&gt;_E</code> where <code cla
 └── ...
 </code></pre>
 </details>
-<div class="markdown-alert markdown-alert-important"><p class="markdown-alert-title"><svg class="octicon octicon-report mr-2" viewBox="0 0 16 16" version="1.1" width="16" height="16" aria-hidden="true"><path d="M0 1.75C0 .784.784 0 1.75 0h12.5C15.216 0 16 .784 16 1.75v9.5A1.75 1.75 0 0 1 14.25 13H8.06l-2.573 2.573A1.458 1.458 0 0 1 3 14.543V13H1.75A1.75 1.75 0 0 1 0 11.25Zm1.75-.25a.25.25 0 0 0-.25.25v9.5c0 .138.112.25.25.25h2a.75.75 0 0 1 .75.75v2.19l2.72-2.72a.749.749 0 0 1 .53-.22h6.5a.25.25 0 0 0 .25-.25v-9.5a.25.25 0 0 0-.25-.25Zm7 2.25v2.5a.75.75 0 0 1-1.5 0v-2.5a.75.75 0 0 1 1.5 0ZM9 9a1 1 0 1 1-2 0 1 1 0 0 1 2 0Z"></path></svg>Important</p><p>The <code class="notranslate">movel_&lt;revision&gt;</code> folder naming is generated from the HF 😊 repo <sup><a href="#user-content-fn-1-4e47fa72c02bd03bc3655fd848b4c1df" id="user-content-fnref-1-7-4e47fa72c02bd03bc3655fd848b4c1df" data-footnote-ref="" aria-describedby="footnote-label">1</a></sup> 🔗 <code class="notranslate">revision</code> value and does <strong>NOT</strong><br>
+<div class="markdown-alert markdown-alert-important"><p class="markdown-alert-title"><svg class="octicon octicon-report mr-2" viewBox="0 0 16 16" version="1.1" width="16" height="16" aria-hidden="true"><path d="M0 1.75C0 .784.784 0 1.75 0h12.5C15.216 0 16 .784 16 1.75v9.5A1.75 1.75 0 0 1 14.25 13H8.06l-2.573 2.573A1.458 1.458 0 0 1 3 14.543V13H1.75A1.75 1.75 0 0 1 0 11.25Zm1.75-.25a.25.25 0 0 0-.25.25v9.5c0 .138.112.25.25.25h2a.75.75 0 0 1 .75.75v2.19l2.72-2.72a.749.749 0 0 1 .53-.22h6.5a.25.25 0 0 0 .25-.25v-9.5a.25.25 0 0 0-.25-.25Zm7 2.25v2.5a.75.75 0 0 1-1.5 0v-2.5a.75.75 0 0 1 1.5 0ZM9 9a1 1 0 1 1-2 0 1 1 0 0 1 2 0Z"></path></svg>Important</p><p>The <code class="notranslate">movel_&lt;revision&gt;</code> folder naming is generated from the HF 😊 repo <sup><a href="#user-content-fn-1-b521c62d7f8b6cd097bbd2cf39b8f14d" id="user-content-fnref-1-7-b521c62d7f8b6cd097bbd2cf39b8f14d" data-footnote-ref="" aria-describedby="footnote-label">1</a></sup> 🔗 <code class="notranslate">revision</code> value and does <strong>NOT</strong><br>
 affect the trained model naming, other training parameters do.<br>
 Since the length of the dataloader depends not only on the size of the dataset but also on the preset batch size,<br>
 and test subset ratio.</p>
@@ -1101,17 +1275,17 @@ those <a href="config.txt">config.txt</a> ⚙ file changes via git replace the f
 </div>
 <hr>
 <h2>Contacts 📧</h2>
-<p><strong>For support write to:</strong> <a href="mailto:lutsai.k@gmail.com">lutsai.k@gmail.com</a> responsible for this GitHub repository <sup><a href="#user-content-fn-8-4e47fa72c02bd03bc3655fd848b4c1df" id="user-content-fnref-8-4e47fa72c02bd03bc3655fd848b4c1df" data-footnote-ref="" aria-describedby="footnote-label">14</a></sup> 🔗</p>
+<p><strong>For support write to:</strong> <a href="mailto:lutsai.k@gmail.com">lutsai.k@gmail.com</a> responsible for this GitHub repository <sup><a href="#user-content-fn-8-b521c62d7f8b6cd097bbd2cf39b8f14d" id="user-content-fnref-8-b521c62d7f8b6cd097bbd2cf39b8f14d" data-footnote-ref="" aria-describedby="footnote-label">14</a></sup> 🔗</p>
 <blockquote>
 <p>Information about the authors of this project, including their names and ORCIDs, can<br>
 be found in the <a href="CITATION.cff">CITATION.cff</a> 📎 file.</p>
 </blockquote>
 <h2>Acknowledgements 🙏</h2>
 <ul>
-<li><strong>Developed by</strong> UFAL <sup><a href="#user-content-fn-7-4e47fa72c02bd03bc3655fd848b4c1df" id="user-content-fnref-7-4e47fa72c02bd03bc3655fd848b4c1df" data-footnote-ref="" aria-describedby="footnote-label">15</a></sup> 👥</li>
-<li><strong>Funded by</strong> ATRIUM <sup><a href="#user-content-fn-4-4e47fa72c02bd03bc3655fd848b4c1df" id="user-content-fnref-4-4e47fa72c02bd03bc3655fd848b4c1df" data-footnote-ref="" aria-describedby="footnote-label">16</a></sup>  💰</li>
-<li><strong>Shared by</strong> ATRIUM <sup><a href="#user-content-fn-4-4e47fa72c02bd03bc3655fd848b4c1df" id="user-content-fnref-4-2-4e47fa72c02bd03bc3655fd848b4c1df" data-footnote-ref="" aria-describedby="footnote-label">16</a></sup> &amp; UFAL <sup><a href="#user-content-fn-7-4e47fa72c02bd03bc3655fd848b4c1df" id="user-content-fnref-7-2-4e47fa72c02bd03bc3655fd848b4c1df" data-footnote-ref="" aria-describedby="footnote-label">15</a></sup> 🔗</li>
-<li><strong>Model type:</strong> fine-tuned ViT with a 224x224 <sup><a href="#user-content-fn-2-4e47fa72c02bd03bc3655fd848b4c1df" id="user-content-fnref-2-2-4e47fa72c02bd03bc3655fd848b4c1df" data-footnote-ref="" aria-describedby="footnote-label">2</a></sup> <sup><a href="#user-content-fn-13-4e47fa72c02bd03bc3655fd848b4c1df" id="user-content-fnref-13-2-4e47fa72c02bd03bc3655fd848b4c1df" data-footnote-ref="" aria-describedby="footnote-label">3</a></sup> <sup><a href="#user-content-fn-14-4e47fa72c02bd03bc3655fd848b4c1df" id="user-content-fnref-14-2-4e47fa72c02bd03bc3655fd848b4c1df" data-footnote-ref="" aria-describedby="footnote-label">4</a></sup> 🔗 or 336x336 <sup><a href="#user-content-fn-15-4e47fa72c02bd03bc3655fd848b4c1df" id="user-content-fnref-15-2-4e47fa72c02bd03bc3655fd848b4c1df" data-footnote-ref="" aria-describedby="footnote-label">5</a></sup> 🔗 resolution size</li>
+<li><strong>Developed by</strong> UFAL <sup><a href="#user-content-fn-7-b521c62d7f8b6cd097bbd2cf39b8f14d" id="user-content-fnref-7-b521c62d7f8b6cd097bbd2cf39b8f14d" data-footnote-ref="" aria-describedby="footnote-label">15</a></sup> 👥</li>
+<li><strong>Funded by</strong> ATRIUM <sup><a href="#user-content-fn-4-b521c62d7f8b6cd097bbd2cf39b8f14d" id="user-content-fnref-4-b521c62d7f8b6cd097bbd2cf39b8f14d" data-footnote-ref="" aria-describedby="footnote-label">16</a></sup>  💰</li>
+<li><strong>Shared by</strong> ATRIUM <sup><a href="#user-content-fn-4-b521c62d7f8b6cd097bbd2cf39b8f14d" id="user-content-fnref-4-2-b521c62d7f8b6cd097bbd2cf39b8f14d" data-footnote-ref="" aria-describedby="footnote-label">16</a></sup> &amp; UFAL <sup><a href="#user-content-fn-7-b521c62d7f8b6cd097bbd2cf39b8f14d" id="user-content-fnref-7-2-b521c62d7f8b6cd097bbd2cf39b8f14d" data-footnote-ref="" aria-describedby="footnote-label">15</a></sup> 🔗</li>
+<li><strong>Model type:</strong> fine-tuned ViT with a 224x224 <sup><a href="#user-content-fn-2-b521c62d7f8b6cd097bbd2cf39b8f14d" id="user-content-fnref-2-2-b521c62d7f8b6cd097bbd2cf39b8f14d" data-footnote-ref="" aria-describedby="footnote-label">2</a></sup> <sup><a href="#user-content-fn-13-b521c62d7f8b6cd097bbd2cf39b8f14d" id="user-content-fnref-13-2-b521c62d7f8b6cd097bbd2cf39b8f14d" data-footnote-ref="" aria-describedby="footnote-label">3</a></sup> <sup><a href="#user-content-fn-14-b521c62d7f8b6cd097bbd2cf39b8f14d" id="user-content-fnref-14-2-b521c62d7f8b6cd097bbd2cf39b8f14d" data-footnote-ref="" aria-describedby="footnote-label">4</a></sup> 🔗 or 336x336 <sup><a href="#user-content-fn-15-b521c62d7f8b6cd097bbd2cf39b8f14d" id="user-content-fnref-15-2-b521c62d7f8b6cd097bbd2cf39b8f14d" data-footnote-ref="" aria-describedby="footnote-label">5</a></sup> 🔗 resolution size</li>
 </ul>
 <p><strong>©️ 2022 UFAL &amp; ATRIUM</strong></p>
 <hr>
@@ -1158,53 +1332,53 @@ be found in the <a href="CITATION.cff">CITATION.cff</a> 📎 file.</p>
 </div>
 <section data-footnotes="" class="footnotes"><h2 id="footnote-label" class="sr-only">Footnotes</h2>
 <ol>
-<li id="user-content-fn-1-4e47fa72c02bd03bc3655fd848b4c1df">
-<p><a href="https://huggingface.co/ufal/clip-historical-page">https://huggingface.co/ufal/clip-historical-page</a> <a href="#user-content-fnref-1-4e47fa72c02bd03bc3655fd848b4c1df" data-footnote-backref="" aria-label="Back to reference 1" class="data-footnote-backref">↩</a> <a href="#user-content-fnref-1-2-4e47fa72c02bd03bc3655fd848b4c1df" data-footnote-backref="" aria-label="Back to reference 1-2" class="data-footnote-backref">↩<sup>2</sup></a> <a href="#user-content-fnref-1-3-4e47fa72c02bd03bc3655fd848b4c1df" data-footnote-backref="" aria-label="Back to reference 1-3" class="data-footnote-backref">↩<sup>3</sup></a> <a href="#user-content-fnref-1-4-4e47fa72c02bd03bc3655fd848b4c1df" data-footnote-backref="" aria-label="Back to reference 1-4" class="data-footnote-backref">↩<sup>4</sup></a> <a href="#user-content-fnref-1-5-4e47fa72c02bd03bc3655fd848b4c1df" data-footnote-backref="" aria-label="Back to reference 1-5" class="data-footnote-backref">↩<sup>5</sup></a> <a href="#user-content-fnref-1-6-4e47fa72c02bd03bc3655fd848b4c1df" data-footnote-backref="" aria-label="Back to reference 1-6" class="data-footnote-backref">↩<sup>6</sup></a> <a href="#user-content-fnref-1-7-4e47fa72c02bd03bc3655fd848b4c1df" data-footnote-backref="" aria-label="Back to reference 1-7" class="data-footnote-backref">↩<sup>7</sup></a></p>
+<li id="user-content-fn-1-b521c62d7f8b6cd097bbd2cf39b8f14d">
+<p><a href="https://huggingface.co/ufal/clip-historical-page">https://huggingface.co/ufal/clip-historical-page</a> <a href="#user-content-fnref-1-b521c62d7f8b6cd097bbd2cf39b8f14d" data-footnote-backref="" aria-label="Back to reference 1" class="data-footnote-backref">↩</a> <a href="#user-content-fnref-1-2-b521c62d7f8b6cd097bbd2cf39b8f14d" data-footnote-backref="" aria-label="Back to reference 1-2" class="data-footnote-backref">↩<sup>2</sup></a> <a href="#user-content-fnref-1-3-b521c62d7f8b6cd097bbd2cf39b8f14d" data-footnote-backref="" aria-label="Back to reference 1-3" class="data-footnote-backref">↩<sup>3</sup></a> <a href="#user-content-fnref-1-4-b521c62d7f8b6cd097bbd2cf39b8f14d" data-footnote-backref="" aria-label="Back to reference 1-4" class="data-footnote-backref">↩<sup>4</sup></a> <a href="#user-content-fnref-1-5-b521c62d7f8b6cd097bbd2cf39b8f14d" data-footnote-backref="" aria-label="Back to reference 1-5" class="data-footnote-backref">↩<sup>5</sup></a> <a href="#user-content-fnref-1-6-b521c62d7f8b6cd097bbd2cf39b8f14d" data-footnote-backref="" aria-label="Back to reference 1-6" class="data-footnote-backref">↩<sup>6</sup></a> <a href="#user-content-fnref-1-7-b521c62d7f8b6cd097bbd2cf39b8f14d" data-footnote-backref="" aria-label="Back to reference 1-7" class="data-footnote-backref">↩<sup>7</sup></a></p>
 </li>
-<li id="user-content-fn-2-4e47fa72c02bd03bc3655fd848b4c1df">
-<p><a href="https://huggingface.co/openai/clip-vit-base-patch16">https://huggingface.co/openai/clip-vit-base-patch16</a> <a href="#user-content-fnref-2-4e47fa72c02bd03bc3655fd848b4c1df" data-footnote-backref="" aria-label="Back to reference 2" class="data-footnote-backref">↩</a> <a href="#user-content-fnref-2-2-4e47fa72c02bd03bc3655fd848b4c1df" data-footnote-backref="" aria-label="Back to reference 2-2" class="data-footnote-backref">↩<sup>2</sup></a></p>
+<li id="user-content-fn-2-b521c62d7f8b6cd097bbd2cf39b8f14d">
+<p><a href="https://huggingface.co/openai/clip-vit-base-patch16">https://huggingface.co/openai/clip-vit-base-patch16</a> <a href="#user-content-fnref-2-b521c62d7f8b6cd097bbd2cf39b8f14d" data-footnote-backref="" aria-label="Back to reference 2" class="data-footnote-backref">↩</a> <a href="#user-content-fnref-2-2-b521c62d7f8b6cd097bbd2cf39b8f14d" data-footnote-backref="" aria-label="Back to reference 2-2" class="data-footnote-backref">↩<sup>2</sup></a></p>
 </li>
-<li id="user-content-fn-13-4e47fa72c02bd03bc3655fd848b4c1df">
-<p><a href="https://huggingface.co/openai/clip-vit-base-patch32">https://huggingface.co/openai/clip-vit-base-patch32</a> <a href="#user-content-fnref-13-4e47fa72c02bd03bc3655fd848b4c1df" data-footnote-backref="" aria-label="Back to reference 3" class="data-footnote-backref">↩</a> <a href="#user-content-fnref-13-2-4e47fa72c02bd03bc3655fd848b4c1df" data-footnote-backref="" aria-label="Back to reference 3-2" class="data-footnote-backref">↩<sup>2</sup></a></p>
+<li id="user-content-fn-13-b521c62d7f8b6cd097bbd2cf39b8f14d">
+<p><a href="https://huggingface.co/openai/clip-vit-base-patch32">https://huggingface.co/openai/clip-vit-base-patch32</a> <a href="#user-content-fnref-13-b521c62d7f8b6cd097bbd2cf39b8f14d" data-footnote-backref="" aria-label="Back to reference 3" class="data-footnote-backref">↩</a> <a href="#user-content-fnref-13-2-b521c62d7f8b6cd097bbd2cf39b8f14d" data-footnote-backref="" aria-label="Back to reference 3-2" class="data-footnote-backref">↩<sup>2</sup></a></p>
 </li>
-<li id="user-content-fn-14-4e47fa72c02bd03bc3655fd848b4c1df">
-<p><a href="https://huggingface.co/openai/clip-vit-large-patch14">https://huggingface.co/openai/clip-vit-large-patch14</a> <a href="#user-content-fnref-14-4e47fa72c02bd03bc3655fd848b4c1df" data-footnote-backref="" aria-label="Back to reference 4" class="data-footnote-backref">↩</a> <a href="#user-content-fnref-14-2-4e47fa72c02bd03bc3655fd848b4c1df" data-footnote-backref="" aria-label="Back to reference 4-2" class="data-footnote-backref">↩<sup>2</sup></a></p>
+<li id="user-content-fn-14-b521c62d7f8b6cd097bbd2cf39b8f14d">
+<p><a href="https://huggingface.co/openai/clip-vit-large-patch14">https://huggingface.co/openai/clip-vit-large-patch14</a> <a href="#user-content-fnref-14-b521c62d7f8b6cd097bbd2cf39b8f14d" data-footnote-backref="" aria-label="Back to reference 4" class="data-footnote-backref">↩</a> <a href="#user-content-fnref-14-2-b521c62d7f8b6cd097bbd2cf39b8f14d" data-footnote-backref="" aria-label="Back to reference 4-2" class="data-footnote-backref">↩<sup>2</sup></a></p>
 </li>
-<li id="user-content-fn-15-4e47fa72c02bd03bc3655fd848b4c1df">
-<p><a href="https://huggingface.co/openai/clip-vit-large-patch14-336">https://huggingface.co/openai/clip-vit-large-patch14-336</a> <a href="#user-content-fnref-15-4e47fa72c02bd03bc3655fd848b4c1df" data-footnote-backref="" aria-label="Back to reference 5" class="data-footnote-backref">↩</a> <a href="#user-content-fnref-15-2-4e47fa72c02bd03bc3655fd848b4c1df" data-footnote-backref="" aria-label="Back to reference 5-2" class="data-footnote-backref">↩<sup>2</sup></a></p>
+<li id="user-content-fn-15-b521c62d7f8b6cd097bbd2cf39b8f14d">
+<p><a href="https://huggingface.co/openai/clip-vit-large-patch14-336">https://huggingface.co/openai/clip-vit-large-patch14-336</a> <a href="#user-content-fnref-15-b521c62d7f8b6cd097bbd2cf39b8f14d" data-footnote-backref="" aria-label="Back to reference 5" class="data-footnote-backref">↩</a> <a href="#user-content-fnref-15-2-b521c62d7f8b6cd097bbd2cf39b8f14d" data-footnote-backref="" aria-label="Back to reference 5-2" class="data-footnote-backref">↩<sup>2</sup></a></p>
 </li>
-<li id="user-content-fn-16-4e47fa72c02bd03bc3655fd848b4c1df">
-<p><a href="http://hdl.handle.net/20.500.12800/1-5959">http://hdl.handle.net/20.500.12800/1-5959</a> <a href="#user-content-fnref-16-4e47fa72c02bd03bc3655fd848b4c1df" data-footnote-backref="" aria-label="Back to reference 6" class="data-footnote-backref">↩</a></p>
+<li id="user-content-fn-16-b521c62d7f8b6cd097bbd2cf39b8f14d">
+<p><a href="http://hdl.handle.net/20.500.12800/1-5959">http://hdl.handle.net/20.500.12800/1-5959</a> <a href="#user-content-fnref-16-b521c62d7f8b6cd097bbd2cf39b8f14d" data-footnote-backref="" aria-label="Back to reference 6" class="data-footnote-backref">↩</a></p>
 </li>
-<li id="user-content-fn-10-4e47fa72c02bd03bc3655fd848b4c1df">
-<p><a href="https://developer.nvidia.com/cuda-python">https://developer.nvidia.com/cuda-python</a> <a href="#user-content-fnref-10-4e47fa72c02bd03bc3655fd848b4c1df" data-footnote-backref="" aria-label="Back to reference 7" class="data-footnote-backref">↩</a> <a href="#user-content-fnref-10-2-4e47fa72c02bd03bc3655fd848b4c1df" data-footnote-backref="" aria-label="Back to reference 7-2" class="data-footnote-backref">↩<sup>2</sup></a> <a href="#user-content-fnref-10-3-4e47fa72c02bd03bc3655fd848b4c1df" data-footnote-backref="" aria-label="Back to reference 7-3" class="data-footnote-backref">↩<sup>3</sup></a></p>
+<li id="user-content-fn-10-b521c62d7f8b6cd097bbd2cf39b8f14d">
+<p><a href="https://developer.nvidia.com/cuda-python">https://developer.nvidia.com/cuda-python</a> <a href="#user-content-fnref-10-b521c62d7f8b6cd097bbd2cf39b8f14d" data-footnote-backref="" aria-label="Back to reference 7" class="data-footnote-backref">↩</a> <a href="#user-content-fnref-10-2-b521c62d7f8b6cd097bbd2cf39b8f14d" data-footnote-backref="" aria-label="Back to reference 7-2" class="data-footnote-backref">↩<sup>2</sup></a> <a href="#user-content-fnref-10-3-b521c62d7f8b6cd097bbd2cf39b8f14d" data-footnote-backref="" aria-label="Back to reference 7-3" class="data-footnote-backref">↩<sup>3</sup></a></p>
 </li>
-<li id="user-content-fn-3-4e47fa72c02bd03bc3655fd848b4c1df">
-<p><a href="https://docs.python.org/3/library/venv.html">https://docs.python.org/3/library/venv.html</a> <a href="#user-content-fnref-3-4e47fa72c02bd03bc3655fd848b4c1df" data-footnote-backref="" aria-label="Back to reference 8" class="data-footnote-backref">↩</a></p>
+<li id="user-content-fn-3-b521c62d7f8b6cd097bbd2cf39b8f14d">
+<p><a href="https://docs.python.org/3/library/venv.html">https://docs.python.org/3/library/venv.html</a> <a href="#user-content-fnref-3-b521c62d7f8b6cd097bbd2cf39b8f14d" data-footnote-backref="" aria-label="Back to reference 8" class="data-footnote-backref">↩</a></p>
 </li>
-<li id="user-content-fn-5-4e47fa72c02bd03bc3655fd848b4c1df">
-<p><a href="https://imagemagick.org/script/download.php#windows">https://imagemagick.org/script/download.php#windows</a> <a href="#user-content-fnref-5-4e47fa72c02bd03bc3655fd848b4c1df" data-footnote-backref="" aria-label="Back to reference 9" class="data-footnote-backref">↩</a> <a href="#user-content-fnref-5-2-4e47fa72c02bd03bc3655fd848b4c1df" data-footnote-backref="" aria-label="Back to reference 9-2" class="data-footnote-backref">↩<sup>2</sup></a></p>
+<li id="user-content-fn-5-b521c62d7f8b6cd097bbd2cf39b8f14d">
+<p><a href="https://imagemagick.org/script/download.php#windows">https://imagemagick.org/script/download.php#windows</a> <a href="#user-content-fnref-5-b521c62d7f8b6cd097bbd2cf39b8f14d" data-footnote-backref="" aria-label="Back to reference 9" class="data-footnote-backref">↩</a> <a href="#user-content-fnref-5-2-b521c62d7f8b6cd097bbd2cf39b8f14d" data-footnote-backref="" aria-label="Back to reference 9-2" class="data-footnote-backref">↩<sup>2</sup></a></p>
 </li>
-<li id="user-content-fn-6-4e47fa72c02bd03bc3655fd848b4c1df">
-<p><a href="https://www.ghostscript.com/releases/gsdnld.html">https://www.ghostscript.com/releases/gsdnld.html</a> <a href="#user-content-fnref-6-4e47fa72c02bd03bc3655fd848b4c1df" data-footnote-backref="" aria-label="Back to reference 10" class="data-footnote-backref">↩</a></p>
+<li id="user-content-fn-6-b521c62d7f8b6cd097bbd2cf39b8f14d">
+<p><a href="https://www.ghostscript.com/releases/gsdnld.html">https://www.ghostscript.com/releases/gsdnld.html</a> <a href="#user-content-fnref-6-b521c62d7f8b6cd097bbd2cf39b8f14d" data-footnote-backref="" aria-label="Back to reference 10" class="data-footnote-backref">↩</a></p>
 </li>
-<li id="user-content-fn-9-4e47fa72c02bd03bc3655fd848b4c1df">
-<p><a href="https://www.openoffice.org/download/">https://www.openoffice.org/download/</a> <a href="#user-content-fnref-9-4e47fa72c02bd03bc3655fd848b4c1df" data-footnote-backref="" aria-label="Back to reference 11" class="data-footnote-backref">↩</a></p>
+<li id="user-content-fn-9-b521c62d7f8b6cd097bbd2cf39b8f14d">
+<p><a href="https://www.openoffice.org/download/">https://www.openoffice.org/download/</a> <a href="#user-content-fnref-9-b521c62d7f8b6cd097bbd2cf39b8f14d" data-footnote-backref="" aria-label="Back to reference 11" class="data-footnote-backref">↩</a></p>
 </li>
-<li id="user-content-fn-11-4e47fa72c02bd03bc3655fd848b4c1df">
-<p><a href="https://huggingface.co/docs/transformers/en/main_classes/trainer#transformers.TrainingArguments">https://huggingface.co/docs/transformers/en/main_classes/trainer#transformers.TrainingArguments</a> <a href="#user-content-fnref-11-4e47fa72c02bd03bc3655fd848b4c1df" data-footnote-backref="" aria-label="Back to reference 12" class="data-footnote-backref">↩</a></p>
+<li id="user-content-fn-11-b521c62d7f8b6cd097bbd2cf39b8f14d">
+<p><a href="https://huggingface.co/docs/transformers/en/main_classes/trainer#transformers.TrainingArguments">https://huggingface.co/docs/transformers/en/main_classes/trainer#transformers.TrainingArguments</a> <a href="#user-content-fnref-11-b521c62d7f8b6cd097bbd2cf39b8f14d" data-footnote-backref="" aria-label="Back to reference 12" class="data-footnote-backref">↩</a></p>
 </li>
-<li id="user-content-fn-12-4e47fa72c02bd03bc3655fd848b4c1df">
-<p><a href="https://pytorch.org/vision/0.20/transforms.html">https://pytorch.org/vision/0.20/transforms.html</a> <a href="#user-content-fnref-12-4e47fa72c02bd03bc3655fd848b4c1df" data-footnote-backref="" aria-label="Back to reference 13" class="data-footnote-backref">↩</a> <a href="#user-content-fnref-12-2-4e47fa72c02bd03bc3655fd848b4c1df" data-footnote-backref="" aria-label="Back to reference 13-2" class="data-footnote-backref">↩<sup>2</sup></a></p>
+<li id="user-content-fn-12-b521c62d7f8b6cd097bbd2cf39b8f14d">
+<p><a href="https://pytorch.org/vision/0.20/transforms.html">https://pytorch.org/vision/0.20/transforms.html</a> <a href="#user-content-fnref-12-b521c62d7f8b6cd097bbd2cf39b8f14d" data-footnote-backref="" aria-label="Back to reference 13" class="data-footnote-backref">↩</a> <a href="#user-content-fnref-12-2-b521c62d7f8b6cd097bbd2cf39b8f14d" data-footnote-backref="" aria-label="Back to reference 13-2" class="data-footnote-backref">↩<sup>2</sup></a></p>
 </li>
-<li id="user-content-fn-8-4e47fa72c02bd03bc3655fd848b4c1df">
-<p><a href="https://github.com/ufal/atrium-page-classification">https://github.com/ufal/atrium-page-classification</a> <a href="#user-content-fnref-8-4e47fa72c02bd03bc3655fd848b4c1df" data-footnote-backref="" aria-label="Back to reference 14" class="data-footnote-backref">↩</a></p>
+<li id="user-content-fn-8-b521c62d7f8b6cd097bbd2cf39b8f14d">
+<p><a href="https://github.com/ufal/atrium-page-classification">https://github.com/ufal/atrium-page-classification</a> <a href="#user-content-fnref-8-b521c62d7f8b6cd097bbd2cf39b8f14d" data-footnote-backref="" aria-label="Back to reference 14" class="data-footnote-backref">↩</a></p>
 </li>
-<li id="user-content-fn-7-4e47fa72c02bd03bc3655fd848b4c1df">
-<p><a href="https://ufal.mff.cuni.cz/home-page">https://ufal.mff.cuni.cz/home-page</a> <a href="#user-content-fnref-7-4e47fa72c02bd03bc3655fd848b4c1df" data-footnote-backref="" aria-label="Back to reference 15" class="data-footnote-backref">↩</a> <a href="#user-content-fnref-7-2-4e47fa72c02bd03bc3655fd848b4c1df" data-footnote-backref="" aria-label="Back to reference 15-2" class="data-footnote-backref">↩<sup>2</sup></a></p>
+<li id="user-content-fn-7-b521c62d7f8b6cd097bbd2cf39b8f14d">
+<p><a href="https://ufal.mff.cuni.cz/home-page">https://ufal.mff.cuni.cz/home-page</a> <a href="#user-content-fnref-7-b521c62d7f8b6cd097bbd2cf39b8f14d" data-footnote-backref="" aria-label="Back to reference 15" class="data-footnote-backref">↩</a> <a href="#user-content-fnref-7-2-b521c62d7f8b6cd097bbd2cf39b8f14d" data-footnote-backref="" aria-label="Back to reference 15-2" class="data-footnote-backref">↩<sup>2</sup></a></p>
 </li>
-<li id="user-content-fn-4-4e47fa72c02bd03bc3655fd848b4c1df">
-<p><a href="https://atrium-research.eu/">https://atrium-research.eu/</a> <a href="#user-content-fnref-4-4e47fa72c02bd03bc3655fd848b4c1df" data-footnote-backref="" aria-label="Back to reference 16" class="data-footnote-backref">↩</a> <a href="#user-content-fnref-4-2-4e47fa72c02bd03bc3655fd848b4c1df" data-footnote-backref="" aria-label="Back to reference 16-2" class="data-footnote-backref">↩<sup>2</sup></a></p>
+<li id="user-content-fn-4-b521c62d7f8b6cd097bbd2cf39b8f14d">
+<p><a href="https://atrium-research.eu/">https://atrium-research.eu/</a> <a href="#user-content-fnref-4-b521c62d7f8b6cd097bbd2cf39b8f14d" data-footnote-backref="" aria-label="Back to reference 16" class="data-footnote-backref">↩</a> <a href="#user-content-fnref-4-2-b521c62d7f8b6cd097bbd2cf39b8f14d" data-footnote-backref="" aria-label="Back to reference 16-2" class="data-footnote-backref">↩<sup>2</sup></a></p>
 </li>
 </ol>
 </section></article>
