@@ -583,13 +583,22 @@ dataset (10% of the provided in `[TRAIN]`'s folder data). Both graphic plots and
 results can be found in the [result](result) 📁 folder.
 
 
-`v1.1.3` Evaluation set's accuracy (**Top-1**):  **99.14%** 🏆
+`v1.1.3.3` Evaluation set's accuracy (**Top-1**):  **99.12%** 🏆
 
 <details>
 
 <summary>Confusion matrix 📊 TOP-1 👀</summary>
 
-![TOP-1 confusion matrix](result%2Fplots%2F20251020-1735_5449_EVAL_conf_1n_Nonec_ViT-B16_v1137.png)
+![TOP-1 confusion matrix](result%2Fplots%2F20251022-1435_5449_EVAL_TOP-1_ViT-B16_v1133.png)
+</details>
+
+`v1.1.3.7` Evaluation set's accuracy (**Top-1**):  **99.14%** 🏆
+
+<details>
+
+<summary>Confusion matrix 📊 TOP-1 👀</summary>
+
+![TOP-1 confusion matrix](result%2Fplots%2F20251022-1656_5449_EVAL_TOP-1_ViT-B16_v1137.png)
 </details>
 
 `v1.2.3` Evaluation set's accuracy (**Top-1**):  **98.99%** 🏆
@@ -598,27 +607,27 @@ results can be found in the [result](result) 📁 folder.
 
 <summary>Confusion matrix 📊 TOP-1 👀</summary>
 
-![TOP-1 confusion matrix](result%2Fplots%2F20251020-1918_5449_EVAL_conf_1n_Nonec_ViT-B32_v123.png)
+![TOP-1 confusion matrix](result%2Fplots%2F20251022-1718_5449_EVAL_TOP-1_ViT-B32_v123.png)
 
 </details>
 
-`v2.1.3` Evaluation set's accuracy (**Top-1**):  **98.97%** 🏆
+`v2.1.3.1` Evaluation set's accuracy (**Top-1**):  **98.97%** 🏆
 
 <details>
 
 <summary>Confusion matrix 📊 TOP-1 👀</summary>
 
-![TOP-1 confusion matrix](result%2Fplots%2F20251020-2050_5449_EVAL_conf_1n_Nonec_ViT-L14_v2131.png)
+![TOP-1 confusion matrix](result%2Fplots%2F20251022-1733_5449_EVAL_TOP-1_ViT-L14_v2131.png)
 
 </details>
 
-`v2.2.3` Evaluation set's accuracy (**Top-1**):  **98.97%** 🏆
+`v2.2.3.4` Evaluation set's accuracy (**Top-1**):  **98.97%** 🏆
 
 <details>
 
 <summary>Confusion matrix 📊 TOP-1 👀</summary>
 
-![TOP-1 confusion matrix](result%2Fplots%2F20251020-1956_5449_EVAL_conf_1n_Nonec_ViT-L14-336px_v2234.png)
+![TOP-1 confusion matrix](result%2Fplots%2F20251022-1457_5449_EVAL_TOP-1_ViT-L14-336px_v2234.png)
 </details>
 
 > **Confusion matrices** provided above show the diagonal of matching gold and predicted categories 🪧
@@ -643,31 +652,45 @@ Additionally, results of prediction inference run on the directory level without
 
 <summary>General result tables 👀</summary>
 
-Demo files  `v1.1.3`:
+Demo files  `v1.1.3.3`:
 
-- Manually ✍️ **checked** evaluation dataset (TOP-1): [model_TOP-1_EVAL.csv](result%2Ftables%2F20251021-2349_5449_EVAL_table_1n_Nonec_ViT-B16_v1137.csv) 📎
+- Manually ✍️ **checked** evaluation dataset (TOP-1): [model_TOP-1_EVAL.csv](result%2Ftables%2F20251022-1435_5449_EVAL_TOP-1_ViT-B16_v1133.csv) 📎
 
-- **Unchecked with TRUE** values (small): [model_TOP-1.csv](result%2Ftables%2Fresult_20250701-1816_ViT-B16_1n_2000c.csv)📎
+- Manually ✍️ **checked** evaluation dataset (TOP-3): [model_TOP-53EVAL.csv](result%2Ftables%2F20251022-1436_5449_EVAL_TOP-3_ViT-B16_v1133.csv) 📎
+
+- **Unchecked with TRUE** values (small): [model_TOP-1.csv](result%2Ftables%2F20251022-1223_114_result_ViT-B16_v1.1.3.3_TOP-1.csv)📎
+
+Demo files  `v1.1.3.7`:
+
+- Manually ✍️ **checked** evaluation dataset (TOP-1): [model_TOP-1_EVAL.csv](result%2Ftables%2F20251022-1656_5449_EVAL_TOP-1_ViT-B16_v1137.csv) 📎
+
+- Manually ✍️ **checked** evaluation dataset (TOP-3): [model_TOP-53EVAL.csv](result%2Ftables%2F20251022-1524_5449_EVAL_TOP-3_ViT-B16_v1137.csv) 📎
+
+- **Unchecked with TRUE** values (small): [model_TOP-1.csv](result%2Ftables%2F20251022-1224_114_result_ViT-B16_v1.1.3.7_TOP-1.csv)📎
 
 Demo files  `v1.2.3`:
 
-- Manually ✍️ **checked** evaluation dataset (TOP-1): [model_TOP-1_EVAL.csv](result%2Ftables%2F20251020-1918_5449_EVAL_table_1n_Nonec_ViT-B32_v123.csv) 📎
+- Manually ✍️ **checked** evaluation dataset (TOP-1): [model_TOP-1_EVAL.csv](result%2Ftables%2F20251022-1718_5449_EVAL_TOP-1_ViT-B32_v123.csv) 📎
 
-- **Unchecked with TRUE** values (small): [model_TOP-1.csv](result%2Ftables%2Fresult_20250701-2216_ViT-B32_1n_2000c.csv)📎
+- Manually ✍️ **checked** evaluation dataset (TOP-3): [model_TOP-53EVAL.csv](result%2Ftables%2F20251022-1537_5449_EVAL_TOP-3_ViT-B32_v123.csv) 📎
 
-Demo files  `v2.1.3`:
+- **Unchecked with TRUE** values (small): [model_TOP-1.csv](result%2Ftables%2F20251022-1226_114_result_ViT-B32_v1.2.3_TOP-1.csv)📎
 
-- Manually ✍️ **checked** evaluation dataset (TOP-1): [model_TOP-1_EVAL.csv](result%2Ftables%2F20251020-2050_5449_EVAL_table_1n_Nonec_ViT-L14_v2131.csv) 📎
+Demo files  `v2.1.3.1`:
 
-- **Unchecked with TRUE** values (small): [model_TOP-1.csv](result%2Ftables%2Fresult_20250701-1742_ViT-L14_1n_2000c.csv)📎
+- Manually ✍️ **checked** evaluation dataset (TOP-1): [model_TOP-1_EVAL.csv](result%2Ftables%2F20251022-1733_5449_EVAL_TOP-1_ViT-L14_v2131.csv) 📎
+- 
+- Manually ✍️ **checked** evaluation dataset (TOP-3): [model_TOP-53EVAL.csv](result%2Ftables%2F20251022-1551_5449_EVAL_TOP-3_ViT-L14_v2131.csv) 📎
 
-Demo files  `v2.2.3`:
+- **Unchecked with TRUE** values (small): [model_TOP-1.csv](result%2Ftables%2F20251022-1226_114_result_ViT-L14_v2.1.3.1_TOP-1.csv)📎
 
-- Manually ✍️ **checked** evaluation dataset (TOP-1): [model_TOP-1_EVAL.csv](result%2Ftables%2F20251020-1956_5449_EVAL_table_1n_Nonec_ViT-L14-336px_v2234.csv) 📎
+Demo files  `v2.2.3.4`:
 
-- Manually ✍️ **checked** evaluation dataset (TOP-5): [model_TOP-5_EVAL.csv](result%2Ftables%2FEVAL_table_5n_2000c_ViTL14336px_20250702-0852.csv) 📎
+- Manually ✍️ **checked** evaluation dataset (TOP-1): [model_TOP-1_EVAL.csv](result%2Ftables%2F20251022-1457_5449_EVAL_TOP-1_ViT-L14-336px_v2234.csv) 📎
 
-- **Unchecked with TRUE** values (small): [model_TOP-1.csv](result%2Ftables%2Fresult_20250701-2218_ViT-L14@336px_1n_2000c.csv)📎
+- Manually ✍️ **checked** evaluation dataset (TOP-3): [model_TOP-53EVAL.csv](result%2Ftables%2F20251022-1452_5449_EVAL_TOP-3_ViT-L14-336px_v2234.csv) 📎
+
+- **Unchecked with TRUE** values (small): [model_TOP-1.csv](result%2Ftables%2F20251022-1230_114_result_ViT-L14-336px_v2.2.3.4_TOP-1.csv)📎
 
 With the following **columns** 📋:
 

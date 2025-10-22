@@ -43,11 +43,11 @@ of HF 😊 hub [^1] 🔗
 |--------:|----------------------------------|:-----:|:---------:|:-----------------------------------------------------------------------------------|
 |  `v2.0` | `vit-base-patch16-224`           | 10073 | **3896**  | annotations with mistakes, more heterogenous data                                  |
 |  `v2.1` | `vit-base-patch16-224`           | 11940 | **5002**  | `main`: more diverse pages in each category, less annotation mistakes              |
-|  `v2.2` | `vit-base-patch16-224`           | 15855 | **5730**  | same data as `v2.1` + some restored pages from `v2.0`                              |
-|  `v3.2` | `vit-base-patch16-384`           | 15855 | **5730**  | same data as `v2.2`, but a bit larger model base with higher resolution            |
-|  `v5.2` | `vit-large-patch16-384`          | 15855 | **5730**  | same data as `v2.2`, but the largest model base with higher resolution             |
-|  `v1.2` | `efficientnetv2_s.in21k`         | 15855 | **5730**  | same data as `v2.2`, but the smallest model base (CNN)                             |
-|  `v4.2` | `efficientnetv2_l.in21k_ft_in1k` | 15855 | **5730**  | same data as `v2.2`, CNN base model smaller than the largest, may be more accurate |
+|  `v2.2` | `vit-base-patch16-224`           | 14270 | **5730**  | same data as `v2.1` + some restored pages from `v2.0`                              |
+|  `v3.2` | `vit-base-patch16-384`           | 14270 | **5730**  | same data as `v2.2`, but a bit larger model base with higher resolution            |
+|  `v5.2` | `vit-large-patch16-384`          | 14270 | **5730**  | same data as `v2.2`, but the largest model base with higher resolution             |
+|  `v1.2` | `efficientnetv2_s.in21k`         | 14270 | **5730**  | same data as `v2.2`, but the smallest model base (CNN)                             |
+|  `v4.2` | `efficientnetv2_l.in21k_ft_in1k` | 14270 | **5730**  | same data as `v2.2`, CNN base model smaller than the largest, may be more accurate |
 |  `v2.3` | `vit-base-patch16-224`           | 38625 | **37328** | new data annotation phase data, more single-page documents used, transformer model |
 |  `v3.3` | `vit-base-patch16-384`           | 38625 | **37328** | same data as `v2.3`, but a bit larger model base with higher resolution            |
 |  `v5.3` | `vit-large-patch16-384`          | 38625 | **37328** | same data as `v2.3`, but the largest model base with higher resolution             |
@@ -76,8 +76,8 @@ of HF 😊 hub [^1] 🔗
 🔲 **Fine-tuned** model repository: UFAL's **vit-historical-page** [^1] 🔗
 
 🔳 **Base** model repository: 
-- Google's **vit-base-patch16-224**,  **vit-base-patch16-384**, and  **vit-large-patch16-284** [^2] [^13] [^14] 🔗
-- timm's **regnety_160.swag_ft_in1k**,  **efficientnetv2_s.in21k**, **efficientnetv2_m.in21k_ft_in1k**, and **efficientnetv2_l.in21k_ft_in1k** [^18] [^15] [^16] [^19] 🔗
+- Google's **vit-base-patch16-224**,  **vit-base-patch16-384**, and  **vit-large-patch16-384** [^2] [^13] [^14] 🔗
+- timm's **regnety_160.swag_ft_in1k** and **efficientnetv2_m.in21k_ft_in1k** [^18] [^19] 🔗
 
 The model was trained on the manually ✍️ annotated dataset of historical documents, in particular, images of pages 
 from the archival documents with paper sources that were scanned into digital form. 
@@ -110,7 +110,8 @@ paper source into one of the categories - each responsible for the following con
 | timm/tf_efficientnetv2_s.in21k             | v7.3     | 14,000  | 97.90         | 97.87        | 1    |              |
 
 
-The rows highlighted in bold correspond to the best models uploaded to the HF 😊 hub [^1] 🔗,
+The rows highlighted in bold correspond to the best models uploaded to the HF 😊 hub [^1] 🔗, and the versions correspond to 
+the training setup mapping adjusted for the HF 😊 hub revisions (which caused the strange order of base model versions).
 
 ![comparison_graph.png](model_acc_compared.png)
 
@@ -415,12 +416,20 @@ After the model is downloaded, you should see a similar file structure:
             └── sort.sh
     ├── result
         ├── plots
-            ├── date-time_conf_mat.png
+            ├── date-time_<#samples>_model_<revision>_conf_mat_TOP-<top_N>.png
             └── ...
         └── tables
-            ├── date-time_TOP-N.csv
-            ├── date-time_TOP-N_EVAL.csv
-            ├── date-time_EVAL_RAW.csv
+            ├── date-time_<#samples>_model_<revision>_TOP-<top_N>.csv
+            ├── date-time_<#samples>_model_<revision>_RAW.csv
+            ├── date-time_<#samples>_model_<revision>_TOP-<top_N>_EVAL.csv
+            ├── date-time_<#samples>_model_<revision>_EVAL_RAW.csv
+            ├── date-time_<#samples>_BEST_<#models>_models_TOP-<top_N>.csv
+            └── ...
+        └── stats
+            ├── model_accuracies.csv
+            ├── model_accuracies_plot.png
+            ├── model_accuracies_zero_plot.png
+            ├── date-time_model_<revision>_FOLD_<n>_DATASETS.txt
             └── ...
     ├── category_samples
         ├── DRAW
@@ -428,6 +437,12 @@ After the model is downloaded, you should see a similar file structure:
             └── ...
         ├── DRAW_L
         └── ...
+    ├── supplement_scripts
+        ├── dataset_timeline.py
+        ├── img2jpeg_v3.py
+        ├── logs_stats.py
+        ├── visualize.py
+        └── job_run.sh
     ├── run.py
     ├── classifier.py
     ├── utils.py
@@ -516,7 +531,7 @@ directory with Python files and only then proceed.
 The following prediction should be run using the `-f` or `--file` flag with the path argument. Optionally, 
 you can use the `-tn` or `--topn` flag with the number of guesses you want to get, and also the `-m` or 
 `--model` flag with the path to the model folder argument. For the specific image file format collection from
-the input fictionary use `-ff` or `--file_format` flag with the format argument (default is `jpeg`).
+the input directory use `-ff` or `--file_format` flag with the format argument (default is `jpeg`).
 
 <details>
 
@@ -574,7 +589,7 @@ for exactly TOP-3 guesses in tabular format from all images found in the given d
 
     python3 run.py --dir 
     
-    python3 run.py -rev v3.2 -b google/vit-base-patch16-384 --inner --dir
+    python3 run.py -rev v3.3 -b google/vit-base-patch16-384 --inner --dir
 
     python3 run.py -m "./models/model_v43" --dir -ff png
 
@@ -707,7 +722,7 @@ results can be found in the [result](result) 📁 folder.
 
 </details>
 
-`v4.3` Evaluation set's accuracy (**Top-1**):  **98.92%** 🏆
+`v4.3` Evaluation set's accuracy (**Top-1**):  **99.16%** 🏆
 
 <details>
 
@@ -822,7 +837,7 @@ Demo files  `v5.3`:
 
 - Manually ✍️ **checked** evaluation dataset (TOP-3): [model_TOP-3_EVAL.csv](result%2Ftables%2F20251020-1921_5449_model_v53_TOP-3_EVAL.csv) 📎
 
-- **Unchecked with TRUE** values (small): [model_TOP-1.csv](result%2Ftables%2F20251020-1809_115_model_v53_TOP-1_EVAL.csv.csv)📎
+- **Unchecked with TRUE** values (small): [model_TOP-1.csv](result%2Ftables%2F20251020-1809_115_model_v53_TOP-1_EVAL.csv)📎
 
 Demo files  `v1.3`:
 
@@ -1166,12 +1181,18 @@ the key phases of the whole process (settings, training, evaluation) is provided
 
 <summary>Project files description 📋👀</summary>
 
-| File Name        | Description                                                                                                     |
-|------------------|-----------------------------------------------------------------------------------------------------------------|
-| `classifier.py`  | Model-specific classes and related functions including predefined values for training arguments                 |
-| `utils.py`       | Task-related algorithms                                                                                         |
-| `run.py`         | Starting point of the program with its main function - can be edited for flags and function argument extensions |
-| `config.txt`     | Changeable variables for the program - should be edited                                                         |
+| File Name             | Description                                                                                                                       |
+|-----------------------|-----------------------------------------------------------------------------------------------------------------------------------|
+| `classifier.py`       | Model-specific classes and related functions including predefined values for training arguments                                   |
+| `utils.py`            | Task-related algorithms                                                                                                           |
+| `run.py`              | Starting point of the program with its main function - can be edited for flags and function argument extensions                   |
+| `config.txt`          | Changeable variables for the program - should be edited                                                                           |
+| `job_run.sh`          | Running on a server node script                                                                                                   |
+| `result_analysis.sh`  | Computes performance scores for saved model results                                                                               |
+| `dataset_timeline.py` | Creates a plot of categories distribution over time based on filenames                                                            |
+| `img2jpeg_v3.py`      | Transforms any images into jpeg format                                                                                            |
+| `logs_stats.py`       | Creates a table of stats for each tensorboard directory with event logs                                                           |
+| `visualize.py`        | Creates a plot of various model types comparison based on the input CSV like [model_accuracies_new.csv](model_accuracies_new.csv) |
 
 </details>
 
@@ -1285,7 +1306,7 @@ More about selecting the image transformation and the available ones you can rea
 
 After training is complete the model will be saved 💾 to its separate subdirectory in the `model` directory, by default, 
 the **naming of the model folder** corresponds to the `revision` variable in the `[HF]` section of 
-the [config.txt](config.txt) ⚙ file, which is shortened by removing any dots and saved like `model_v<revision>`.
+the [config.txt](config.txt) ⚙ file, which is shortened by removing any dots and saved like `model_<revision>`.
 
 <details>
 
@@ -1293,11 +1314,11 @@ the [config.txt](config.txt) ⚙ file, which is shortened by removing any dots a
     
     /local/folder/for/this/project/atrium-page-classification
     ├── model
-        ├── movel_v<HFrevision1> 
+        ├── movel_<HFrevision1> 
             ├── config.json
             ├── model.safetensors
             └── preprocessor_config.json
-        ├── movel_v<HFrevision2>
+        ├── movel_<HFrevision2>
         └── ...
     ├── checkpoint
         ├── models--google--vit-base-patch16-224
@@ -1358,9 +1379,9 @@ splitting strategy of 80-10-10% for training, dev, and evaluation subsets respec
 Moreover, the models trained in the cross-validation mode that have the same base model can be averaged and saved
 as a separate model for further evaluation or prediction inference. To do this, you should run the following command:
 
-    python3 run.py --average -ap model_v<revision>
+    python3 run.py --average -ap model_<revision>
 
-where `model_<revision>` is the common part of the model folders' names, for example, `model_v<revision>`. Which will result
+where `model_<revision>` is the common part of the model folders' names, for example, `model_<revision>`. Which will result
 in a new model saved as `model_<revision>a<#folds>` next to its parent models in the models' directory 📁.
 
 ### Evaluation 🏆
@@ -1410,7 +1431,7 @@ same as for the training pages directory - the category 🪧 subdirectories are 
 - **Shared by** ATRIUM [^4] & UFAL [^7] 🔗
 - **Model type:** 
   - fine-tuned ViT with a 224x224 [^2] 🔗 or 384x384 [^13] [^14] 🔗 resolution size 
-  - fine-tuned EffNetV2 with a 300x300 [^15] 🔗 or 384x384 [^16] 🔗 resolution size 
+  - fine-tuned RegNetY-16GF with a 224x224 resolution [^18] or EffNetV2 with a 384x384 [^19] 🔗 resolution size 
 
 **©️ 2022 UFAL & ATRIUM**
 
