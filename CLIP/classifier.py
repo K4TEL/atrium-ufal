@@ -398,10 +398,15 @@ class CLIP(nn.Module, PyTorchModelHubMixin):
         Loads a saved model and evaluates its performance on the specified evaluation directory.
         """
         if model_path is not None:
-            print(f"Loading model from {model_path} for evaluation...")
-            checkpoint = torch.load(model_path, map_location=self.device)
-            self.model.load_state_dict(checkpoint['model_state_dict'])
-            print(f"Model loaded from epoch {checkpoint['epoch']+1} with loss {checkpoint['loss']:.4f}.")
+            if Path(model_path).is_file():
+                print(f"Loading model from {model_path} for evaluation...")
+                checkpoint = torch.load(model_path, map_location=self.device)
+                self.model.load_state_dict(checkpoint['model_state_dict'])
+                print(f"Model loaded from epoch {checkpoint['epoch']+1} with loss {checkpoint['loss']:.4f}.")
+            else:
+                print(f"Loading from directory {model_path} using HF Hub mixin...")
+                self.load_model(load_directory=model_path, revision=model_path.split("_")[-1] if "_" in model_path else "main")
+                print("Model loaded using HF Hub mixin.")
 
         model_name = Path(model_path).stem if model_path is not None else self.model_code_name
 
@@ -512,8 +517,8 @@ class CLIP(nn.Module, PyTorchModelHubMixin):
 
         number_of_samples = all_pred_scores.shape[0]
 
-        plot_image = plot_path / f'{time_stamp}_{number_of_samples}_EVAL_TOP-{self.top_N}_{self.model_code_name}.png'
-        table_file = table_path / f'{time_stamp}_{number_of_samples}_EVAL_TOP-{self.top_N}_{self.model_code_name}.csv'
+        plot_image = plot_path / f'{time_stamp}_{number_of_samples}{"_zero" if self.zero_shot else ""}_EVAL_TOP-{self.top_N}_{self.model_code_name}.png'
+        table_file = table_path / f'{time_stamp}_{number_of_samples}{"_zero" if self.zero_shot else ""}_EVAL_TOP-{self.top_N}_{self.model_code_name}.csv'
 
 
         if vis:

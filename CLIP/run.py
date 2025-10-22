@@ -129,6 +129,8 @@ if __name__ == "__main__":
     # Category file arguments
     parser.add_argument('--cat_prefix', type=str, default=categ_prefix,
                         help='Prefix for category description TSV files.')
+    parser.add_argument('-cc', '--cat_csv', type=str, default=categ_file,
+                        help='Prefix for category description TSV files.')
     parser.add_argument('--cat_dir', type=str, default=categ_directory, help='Directory with category description files.'),
     parser.add_argument('--avg', action='store_true', default=avg, help='Average scores from multiple category description files.')
     parser.add_argument("--best",
@@ -156,7 +158,7 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     input_dir = Path(test_dir) if args.directory is None else Path(args.directory)
-    Training, top_N, raw, safety = args.train, args.topn, args.raw, args.safe
+    Training, top_N, raw, safety, categ_file = args.train, args.topn, args.raw, args.safe, args.cat_csv
 
     if args.revision is None: # using config file revision
         args.revision = hf_version
@@ -208,7 +210,7 @@ if __name__ == "__main__":
         clip_instance = CLIP(max_category_samples=args.max_categ, test_ratio=test_size,
                              eval_max_category_samples=args.max_categ_eval,
                              top_N=args.topn, model_name=args.model, device=device,
-                             categories_tsv=categ_file, seed=seed, input_format=args.file_format,
+                             categories_tsv=args.cat_csv, seed=seed, input_format=args.file_format,
                              output_dir=str(output_dir), categories_dir=cat_directory,
                              model_dir=str(model_path), cp_dir=str(cp_dir), model_revision=args.revision.replace('.', ''),
                              cat_prefix=args.cat_prefix, avg=args.avg, zero_shot=args.zero_shot)
