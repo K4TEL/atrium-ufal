@@ -37,7 +37,7 @@ class CLIP(nn.Module, PyTorchModelHubMixin):
                  eval_max_category_samples: int | None,
                  top_N: int,
                  model_name: str,
-                 revision: str | None,
+                 model_revision: str | None,
                  device: str,
                  seed: int,
                  categories_tsv: str,
@@ -49,7 +49,7 @@ class CLIP(nn.Module, PyTorchModelHubMixin):
                  cp_dir: str = None,
                  cat_prefix: str = None,
                  safety_check: bool = True,
-                 avg: bool = True,
+                 avg: bool = False,
                  zero_shot: bool = False):
         super().__init__()  # initialize nn.Module
         # all your existing init logic follows unchanged:
@@ -72,7 +72,7 @@ class CLIP(nn.Module, PyTorchModelHubMixin):
         self.checkpoints_dir = Path(__file__).parent / "model_checkpoints" if cp_dir is None else Path(cp_dir)
         self.download_root = '/lnet/work/projects/atrium/cache/clip'
 
-        self.model_code_name = f'{model_name.replace("/", "").replace("@", "-")}_{revision}'
+        self.model_code_name = f'{model_name.replace("/", "").replace("@", "-")}_{model_revision}'
 
         # Must set jit=False for training
         self.model, self.preprocess = clip.load(model_name, device=device,
@@ -120,19 +120,22 @@ class CLIP(nn.Module, PyTorchModelHubMixin):
                 self.categories = sorted(loaded_cats.keys())
                 self.class_to_idx = {cat: i for i, cat in enumerate(self.categories)}
                 self.texts = loaded_cats  # dict of lists
-                print(f"Categories: {self.categories} with multiple descriptions per category.")
                 self.text_features = self._get_averaged_text_features()
-                for cat, descs in self.texts.items():
-                    print(f"Category: {cat}, Descriptions:")
-                    for desc in descs:
-                        print(f"  - {desc}")
                 self.avg = True
             else:
                 self.categories = [label for label, desc in loaded_cats]
                 self.texts = [desc for label, desc in loaded_cats]
                 self.text_inputs = torch.cat([clip.tokenize(f"a scan of {description}") for description in self.texts]).to(
                         device)
-                print(f"Categories: {self.categories} with single description per category.")
+            print(f"Categories: {self.categories} with single description per category.")
+            if isinstance(self.texts, list):
+                for cat, desc in zip(self.categories, self.texts):
+                    print(f"Category: {cat}, Description: {desc}")
+            else:
+                for cat, descs in self.texts.items():
+                    print(f"Category: {cat}, Descriptions:")
+                    for desc in descs:
+                        print(f"  - {desc}")
 
         self.model_name = model_name
 
@@ -580,7 +583,9 @@ class CLIP(nn.Module, PyTorchModelHubMixin):
         # The from_pretrained method of PyTorchModelHubMixin loads the model into the current instance.
         # It also handles loading the associated configuration.
         loaded_model = self.from_pretrained(load_directory,
+                                            avg=self.avg,
                                             revision=revision,
+                                            model_revision=revision,
                                             seed=self.seed,
                                             max_category_samples=self.upper_category_limit,
                                             eval_max_category_samples=self.upper_category_limit_eval,
@@ -650,6 +655,8 @@ class CLIP(nn.Module, PyTorchModelHubMixin):
         # The from_pretrained method of PyTorchModelHubMixin loads the model and its configuration
         # directly into the current instance.
         loaded_model = self.from_pretrained(repo_id, revision=revision,
+                                            avg=self.avg, seed=self.seed,
+                                            model_revision=revision,
                                             max_category_samples=self.upper_category_limit,
                                             eval_max_category_samples=self.upper_category_limit_eval,
                                             top_N=self.top_N,
@@ -678,7 +685,7 @@ class CLIP(nn.Module, PyTorchModelHubMixin):
         print(f"Model and configuration loaded from the Hugging Face Hub: {repo_id}")
 
 
-    def predict_single(self, image_file: str) -> str:
+    def predict_single_best(self, image_file: str) -> dict:
         """
         Predicts the category of a single image file.
         :param image_file:
@@ -687,11 +694,14 @@ class CLIP(nn.Module, PyTorchModelHubMixin):
         image = Image.open(image_file)
         image_input = self.preprocess(image).unsqueeze(0).to(self.device)
 
-        _, best_n_indices, _ = self.top_N_prediction(image_input, self.top_N)
+        best_n_scores, best_n_indices, _ = self.top_N_prediction(image_input, self.top_N)
         pred_label = self.categories[best_n_indices[0]]
         return pred_label
+        # results = {label : score for label, score in zip([self.categories[i] for i in best_n_indices], best_n_scores)}
+        # return results
 
-    def predict_top(self, image_file: str) -> (list, list):
+
+    def predict_top_N(self, image_file: str) -> (list, list):
         """
         Predicts the TOP-N categories of a single image file.
         :param image_file:
@@ -720,15 +730,6 @@ class CLIP(nn.Module, PyTorchModelHubMixin):
         """
         folder_path = Path(folder_path)
 
-        # Get all images (add recursive option if needed)
-        # if recursive:
-        #     images = []
-        #     for ext in self.file_format:
-        #         images.extend(folder_path.rglob(f"*.{ext}"))
-        #         images.extend(folder_path.rglob(f"*.{ext.upper()}"))
-        # else:
-        #     images = directory_scraper(folder_path, self.file_format)
-
         images = directory_scraper(Path(folder_path), self.file_format)
         print(f"Found {len(images)} images in {folder_path}")
 
@@ -736,9 +737,9 @@ class CLIP(nn.Module, PyTorchModelHubMixin):
 
         # Prepare output paths
         out_table = out_table if out_table is not None \
-            else f"{self.output_dir}/tables/{time_stamp}_result_{self.model_code_name}_TOP-{self.top_N}.csv"
+            else f"{self.output_dir}/tables/{time_stamp}_{len(images)}_{'zero_' if self.zero_shot else ''}result_{self.model_code_name}_TOP-{self.top_N}.csv"
 
-        raw_table = f"{self.output_dir}/tables/{time_stamp}_RAW_{self.model_code_name}.csv" if raw else None
+        raw_table = f"{self.output_dir}/tables/{time_stamp}_{len(images)}_{'zero_' if self.zero_shot else ''}RAW_{self.model_code_name}.csv" if raw else None
 
         # Process in batches
         total_processed = 0
@@ -808,6 +809,11 @@ class CLIP(nn.Module, PyTorchModelHubMixin):
         print(f"Results for TOP-{self.top_N} predictions ({total_processed} images) saved to {out_table}")
         if raw:
             print(f"RAW Results saved to {raw_table}")
+
+        output_dataframe = pd.read_csv(out_table, sep=",", index_col=None)
+        return output_dataframe
+
+
 
     def predict_dir(self, folder_path: str, raw: bool = False, out_table: str = None):
         """
