@@ -41,14 +41,14 @@ of HF 😊 hub [^1] 🔗
 
 |  Version | Base code      | Pages |   PDFs    | Description                   |
 |---------:|----------------|:-----:|:---------:|:------------------------------|
-|   `v1.1` | `ViT-B/16`     | 15855 | **5730**  | smallest (old default)        |
-|   `v1.2` | `ViT-B/32`     | 15855 | **5730**  | small with higher granularity |
-|   `v2.1` | `ViT-L/14`     | 15855 | **5730**  | large                         |
-|   `v2.2` | `ViT-L/14@336` | 15855 | **5730**  | large with highest resolution |
+|   `v1.1` | `ViT-B/16`     | 14270 | **5730**  | smallest (old default)        |
+|   `v1.2` | `ViT-B/32`     | 14270 | **5730**  | small with higher granularity |
+|   `v2.1` | `ViT-L/14`     | 14270 | **5730**  | large                         |
+|   `v2.2` | `ViT-L/14@336` | 14270 | **5730**  | large with highest resolution |
 | `v1.1.3` | `ViT-B/16`     | 38625 | **37328** | smallest and most accurate    |
 | `v1.2.3` | `ViT-B/32`     | 38625 | **37328** | small and 2nd in accuracy     |
-| `v2.1.3` | `ViT-B/14`     | 38625 | **37328** | largest and least accurate    |
-| `v2.2.3` | `ViT-B/14@336` | 38625 | **37328** | largest and least accurate    |
+| `v2.1.3` | `ViT-B/14`     | 38625 | **37328** | larges and not too accurate   |
+| `v2.2.3` | `ViT-B/14@336` | 38625 | **37328** | larges and not too accurate   |
 
 
 <details>
@@ -145,7 +145,7 @@ This method produces subsets that:
 This ensures that our subsets cover the full chronological and structural variability of the 
 collection, leading to a more robust and reliable model evaluation. 
 
-**Training** 💪 set of the model: **14565** images for `vX.X` 
+**Training** 💪 set of the model: **14270** images for `vX.X` 
 
 **Training** 💪 set of the model: **38625** images for `vX.X.3` 
 
@@ -353,10 +353,12 @@ or `-m` flag (only when the trained model version demands such base model as des
  
     python3 run.py --hf -rev v2.2.3 -m `ViT-L/14@336px`
 
+
 > [!IMPORTANT]
-> If you already have the model files in the `model/movel_<revision>`
-> directory next to this file, you do **NOT** have to use the `--hf` flag to download the
+> If you already have the model files in the `models/<base_code>_rev_<revision>`
+> directory (e.g., `models/ViT-B-16_rev_v1.1.3`), you do **NOT** have to use the `--hf` flag to download the
 > model files from the HF 😊 repo [^1] 🔗 (only for the **model version update**).
+
 
 You should see a message about loading the model from the hub and then saving it locally on
 your machine 🖥️. 
@@ -696,7 +698,7 @@ Demo files `v2.1`:
 
 - **Unchecked with TRUE** values (small) **RAW**: [model_RAW.csv](result%2Ftables%2F20250701-1743_ViT-L14_RAW.csv) 📎
 
-- Demo files `v2.2`:
+Demo files `v2.2`:
 
 - **Unchecked with TRUE** values (small) **RAW**: [model_RAW.csv](result%2Ftables%2F20250701-2218_ViT-L14@336px_RAW.csv) 📎
 
@@ -955,7 +957,7 @@ set a path to the data folder. Make sure label directory names do **NOT** contai
 > for a maximum number of samples per category 🪧, in case you have **over-represented labels** significantly dominating in size.
 > Set `max_categ` higher than the number of samples in the largest category 🪧 to use **all** data samples. Similarly, 
 > `max_categ_e` parameter sets the maximum number of samples per category 🪧 for the evaluation dataset, and should be 
-> increased to very large numbers if you want to cover all samples from al categories 🪧.
+> increased to very large numbers if you want to cover all samples from all categories 🪧.
 
 From this point, you can start model training or evaluation process.
 
@@ -973,7 +975,7 @@ the key phases of the whole process (settings, training, evaluation) is provided
 | File Name             | Description                                                                                                     |
 |-----------------------|-----------------------------------------------------------------------------------------------------------------|
 | `classifier.py`       | Model-specific classes and related functions including predefined values for training arguments                 |
-| `minor_classses.py`   | Adjacent functions and support classes                                                                          |
+| `minor_classes.py`   | Adjacent functions and support classes                                                                          |
 | `utils.py`            | Task-related algorithms                                                                                         |
 | `run.py`              | Starting point of the program with its main function - can be edited for flags and function argument extensions |
 | `config.txt`          | Changeable variables for the program - should be edited                                                         |
@@ -1060,8 +1062,8 @@ Above are the default hyperparameters or TrainingArguments [^11] used in the tra
 of the [config.txt](config.txt) ⚙ file. Importantly, `avg` - average configuration of all texts can be used.
 
 > [!IMPORTANT]
-> CLIP models accept not only images but also text inputs, in our case its [descriptions.tsv](category_description_total.tsv) 📎 file 
-> which summarizes the category 🪧 descriptions in the [category_samples](category_samples) 📁 folder. Optionally you can run the modesl
+> CLIP models accept not only images but also text inputs, in our case its [descriptions.tsv](category_descriptions%2FTOTAL_page_categories.csv) 📎 file 
+> which summarizes the category 🪧 descriptions in the [category_descriptions](category_descriptions) 📁 folder. Optionally you can run the modesl
 > with only a single table of category 🪧 descriptions (via `categories_file` variable), or use `--avg` flag to average all of the 
 > category 🪧 descriptions in the `description_folder` starting with the `categories_prefix` value.
 
@@ -1161,15 +1163,10 @@ for example `model_<S/B>_E` where `E` is the number of epochs, `B` is the batch 
 
 </details>
 
-> [!IMPORTANT] 
-> The `movel_<revision>` folder naming is generated from the HF 😊 repo [^1] 🔗 `revision` value and does **NOT** 
-> affect the trained model naming, other training parameters do. 
-> Since the length of the dataloader depends not only on the size of the dataset but also on the preset batch size, 
-> and test subset ratio. 
+
 
 You can slightly change the `test_size` and / or
-the `batch` variable value in the [config.txt](config.txt) ⚙ file to train a differently named model on the same dataset.
-Alternatively, adjust the **model naming generation** in the [classifier.py](classifier.py)'s 📎 training function.
+the `batch` variable value in the [config.txt](config.txt) ⚙ file.
 
 ### Evaluation 🏆
 
@@ -1187,7 +1184,7 @@ confusion matrix plot 📊 and additionally get raw class probabilities table ru
 
 **OR** when you don't remember the specific `[SETUP]` and `[TRAIN]` variables' values for the trained model, you can use:
 
-    python3 run.py --eval -model_path 'model_<categ_limit>_<base>_<lr>.pt'
+    python3 run.py --eval -model_path 'model_checkpoints/model_<categ_limit>_<base>_<lr>_<epoch>e.pt'
 
 To prove that initial models without finetuning show awful results you can run `--zero_shot` flag during the evalution.
 
