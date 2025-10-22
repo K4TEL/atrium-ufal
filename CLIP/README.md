@@ -55,12 +55,12 @@ of HF 😊 hub [^1] 🔗
 
 <summary>Base model - size 👀</summary>
 
-| **Version**                         | **Disk space** |
-|-------------------------------------|----------------|
-| `openai/clip-vit-base-patch16`      | 992 Mb         |
-| `openai/clip-vit-base-patch32`      | 1008 Mb        |
-| `openai/clip-vit-large-patch14`     | 1.5 Gb         |
-| `openai/clip-vit-large-patch14-336` | 1.5 Gb         |
+| **Version**                         | **Disk space** | **Parameters (Millions)** |
+|-------------------------------------|----------------|---------------------------|
+| `openai/clip-vit-base-patch16`      | 992 Mb         | 149.62 M                  |
+| `openai/clip-vit-base-patch32`      | 1008 Mb        | 151.28 M                  |
+| `openai/clip-vit-large-patch14`     | 1.5 Gb         | 427.62 M                  |
+| `openai/clip-vit-large-patch14-336` | 1.5 Gb         | 427.94 M                  |
 
 </details>
 
@@ -93,13 +93,29 @@ The figure above shows accuracy and parameters comparison of different base mode
 best models overall (above the trendline) which mainly includes image-based models like CNNs and transformers, and the hybrid
 CLIP models themselves (best versions of each base model).
 
+
+Versions of CLIP models are grounded on the textual category description sets, all illustrated in 
+[descriptions_comparison_graph.png](result%2Fstats%2Fmodel_accuracy_plot.png) 📎 which is a graph containing separate and averaged results 
+of all category 🪧 descriptions. 
+
+As our experiments showed, the averaging strategy is not the best. Moreover, the smallest model
+ViT-B/16 showed the best results after fine-tuning model on some selected category 🪧 set.
+
+![description comparison graph](result%2Fstats%2Fmodel_accuracy_plot.png)
+
+Check out all of the prepared category 🪧 descriptions in the [category_descriptions](category_descriptions) 📁 folder.
+Which supports versions mapping from 1 to 9 for the csv files starting with `page_categories_` prefix. The separate set
+starting with `TOTAL` is a mixture of all category descriptions, a set starting with `GENERAL` is a simplified category 🪧 set 
+(only 4 classes), and a set starting with `EXPANDED` is an experimental more fine-grained in categories version of the category 🪧 descriptions.
+
+
 ### Data 📜
 
 The dataset is provided under Public Domain license, and consists of **48,499** PNG images of pages from **37,328** archival documents.
 The source image files and their annotation can be found in the LINDAT repository [^16] 🔗. 
 
 The annotation provided includes 5 different
-dataset splits of `vX.3` model versions, and it's recommended to average all 5 trained model weights to get a more robust
+dataset splits of `vX.X.3` model versions, and it's recommended to average all 5 trained model weights to get a more robust
 model for prediction (in some cases, like `TEXT` and `TEXT_T` categories which samples very often look the same, the accuracy of those 
 problematic categories could drop below 90% with off-diagonal errors rising above 10% after the averaging of trained models). Anyhow, the
 averaged model usually score higher accuracy than any of its individual components... or sometimes causes a drop in accuracy for 
@@ -127,9 +143,7 @@ This method produces subsets that:
 - Introduce controlled randomness, so the selected samples are not strictly periodic
 
 This ensures that our subsets cover the full chronological and structural variability of the 
-collection, leading to a more robust and reliable model evaluation. At the last stages, the whole
-procedure was performed several times in terms of the cross-validation training, when each new fold
-used a incremented by 1 random seed for the random shifts step.
+collection, leading to a more robust and reliable model evaluation. 
 
 **Training** 💪 set of the model: **14565** images for `vX.X` 
 
@@ -363,8 +377,8 @@ After the model is downloaded, you should see a similar file structure:
             ├── model.safetensors
             └── preprocessor_config.json
     ├── model_checkpoints
-        ├── model_<categ_limit>_<base_code>_<lr>.pt
-        ├── model_<categ_limit>_<base_code>_<lr>_cp.pt
+        ├── model_<categ_limit>_<base_code>_<lr>_<epoch>e.pt
+        ├── model_<categ_limit>_<base_code>_<lr>_<epoch>e_cp.pt
         └── ...
     ├── data_scripts
         ├── windows
@@ -377,18 +391,29 @@ After the model is downloaded, you should see a similar file structure:
             └── sort.sh
     ├── result
         ├── plots
-            ├── conf_mat_Nn_Cc_<base>_date-time.png
+            ├── date-time_<#samples>_EVAL_TOP-<top_N>_<base>_<revision>.png
             └── ...
         └── tables
-            ├── result_date-time_<base>_Nn_Cc.csv
-            ├── EVAL_table_Nn_Cc_<base>_date-time.csv
-            ├── date-time_<base>_RAW.csv
+            ├── date-time_<#samples>_EVAL_TOP-<top_N>_<base>_<revision>.csv
+            ├── date-time_<#samples>_result_modelL_<base>_<revision>_TOP-<top_N>.csv
+            ├── date-time_<#samples>_EVAL_<base>_<revision>_RAW.csv
+            └── ...
+        └── stats
+            ├── model_accuracies.csv
+            ├── model_accuracies_zero.csv
+            ├── model_accuracies_plot.png
+            ├── model_accuracies_zero_plot.png
+            ├── date-time_model_<rev>_<max_categ>c_<seed>r_DATASETS.txt
             └── ...
     ├── category_samples
         ├── DRAW
             ├── CTX193200994-24.png
             └── ...
         ├── DRAW_L
+        └── ...
+    ├── category_descriptions
+        ├── page_categories_init.csv
+        ├── TOTAL_page_categories.csv
         └── ...
     ├── run.py
     ├── classifier.py
@@ -447,12 +472,12 @@ the `batch` variable in the `[SETUP]` section.
 
 <summary>Rough estimations of disk space needed for trained model in relation to the base model 👀</summary>
 
-| **Version**                         | **Disk space** |
-|-------------------------------------|----------------|
-| `openai/clip-vit-base-patch16`      | 992 Mb         |
-| `openai/clip-vit-base-patch32`      | 1008 Mb        |
-| `openai/clip-vit-large-patch14`     | 1.5 Gb         |
-| `openai/clip-vit-large-patch14-336` | 1.5 Gb         |
+| **Version**                         | **Disk space** | **Parameters (Millions)** |
+|-------------------------------------|----------------|---------------------------|
+| `openai/clip-vit-base-patch16`      | 992 Mb         | 149.62 M                  |
+| `openai/clip-vit-base-patch32`      | 1008 Mb        | 151.28 M                  |
+| `openai/clip-vit-large-patch14`     | 1.5 Gb         | 427.62 M                  |
+| `openai/clip-vit-large-patch14-336` | 1.5 Gb         | 427.94 M                  |
 
 </details>
 
@@ -945,13 +970,17 @@ the key phases of the whole process (settings, training, evaluation) is provided
 
 <summary>Project files description 📋👀</summary>
 
-| File Name           | Description                                                                                                     |
-|---------------------|-----------------------------------------------------------------------------------------------------------------|
-| `classifier.py`     | Model-specific classes and related functions including predefined values for training arguments                 |
-| `minor_classses.py` | Adjacent functions and support classes                                                                          |
-| `utils.py`          | Task-related algorithms                                                                                         |
-| `run.py`            | Starting point of the program with its main function - can be edited for flags and function argument extensions |
-| `config.txt`        | Changeable variables for the program - should be edited                                                         |
+| File Name             | Description                                                                                                     |
+|-----------------------|-----------------------------------------------------------------------------------------------------------------|
+| `classifier.py`       | Model-specific classes and related functions including predefined values for training arguments                 |
+| `minor_classses.py`   | Adjacent functions and support classes                                                                          |
+| `utils.py`            | Task-related algorithms                                                                                         |
+| `run.py`              | Starting point of the program with its main function - can be edited for flags and function argument extensions |
+| `config.txt`          | Changeable variables for the program - should be edited                                                         |
+| `job_run.sh`          | Running on a server node script                                                                                 |
+| `dataset_timeline.py` | Creates a plot of categories distribution over time based on filenames                                          |
+| `img2jpeg_v3.py`      | Transforms any images into jpeg format                                                                          |
+| `logs_stats.py`       | Creates a table of stats for each tensorboard directory with event logs                                         |
 
 </details>
 
