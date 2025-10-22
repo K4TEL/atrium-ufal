@@ -101,7 +101,7 @@ of all category 🪧 descriptions.
 As our experiments showed, the averaging strategy is not the best. Moreover, the smallest model
 ViT-B/16 showed the best results after fine-tuning model on some selected category 🪧 set.
 
-![description comparison graph](result%2Fstats%2Fmodel_accuracy_plot.png)
+![description comparison graph](result%2Fstats%2Fmodel_accuracy_plot_all.png)
 
 Check out all of the prepared category 🪧 descriptions in the [category_descriptions](category_descriptions) 📁 folder.
 Which supports versions mapping from 1 to 9 for the csv files starting with `page_categories_` prefix. The separate set
@@ -582,6 +582,37 @@ There are accuracy performance measurements and plots of confusion matrices for 
 dataset (10% of the provided in `[TRAIN]`'s folder data). Both graphic plots and tables with 
 results can be found in the [result](result) 📁 folder.
 
+| version      | model_name              | accuracy (%) |
+|:-------------|:------------------------|-------------:|
+| v1.1.3.1     | ViT-B/16 init           |         99.1 |
+| v1.1.3.2     | ViT-B/16 details        |        99.08 |
+| **v1.1.3.3** | **ViT-B/16 extra**      |    **99.12** |
+| v1.1.3.4     | ViT-B/16 gemini         |         99.1 |
+| v1.1.3.5     | ViT-B/16 gpt            |        98.95 |
+| v1.1.3.6     | ViT-B/16 large          |         99.1 |
+| **v1.1.3.7** | **ViT-B/16 mid**        |    **99.14** |
+| v1.1.3.8     | ViT-B/16 min            |        98.86 |
+| v1.1.3.9     | ViT-B/16 short          |        99.06 |
+| v1.1.3       | ViT-B/16 average        |        99.06 |
+| v1.2.3.1     | ViT-B/32 init           |        98.95 |
+| v1.2.3.3     | ViT-B/32 extra          |        98.92 |
+| v1.2.3.4     | ViT-B/32 gemini         |        98.94 |
+| v1.2.3.6     | ViT-B/32 large          |        98.97 |
+| v1.2.3.7     | ViT-B/32 mid            |        98.86 |
+| **v1.2.3**   | **ViT-B/32 average**    |    **98.99** |
+| **v2.2.3.1** | **ViT-L/14-336px init** |    **98.86** |
+| v2.2.3.3     | ViT-L/14-336px extra    |        98.59 |
+| v2.2.3.4     | ViT-L/14-336px gemini   |        98.97 |
+| v2.2.3.6     | ViT-L/14-336px large    |        98.68 |
+| v2.2.3.7     | ViT-L/14-336px mid      |        98.81 |
+| v2.2.3       | ViT-L/14-336px average  |        98.72 |
+| v2.1.3.1     | ViT-L/14 init           |        98.97 |
+| v2.1.3.3     | ViT-L/14 extra          |        98.83 |
+| **v2.1.3.4** | **ViT-L/14 gemini**     |    **98.86** |
+| v2.1.3.6     | ViT-L/14 large          |        98.92 |
+| v2.1.3.7     | ViT-L/14 mid            |         98.9 |
+| v2.1.3       | ViT-L/14 average        |        98.81 |
+
 
 `v1.1.3.3` Evaluation set's accuracy (**Top-1**):  **99.12%** 🏆
 
@@ -998,7 +1029,7 @@ the key phases of the whole process (settings, training, evaluation) is provided
 | File Name             | Description                                                                                                     |
 |-----------------------|-----------------------------------------------------------------------------------------------------------------|
 | `classifier.py`       | Model-specific classes and related functions including predefined values for training arguments                 |
-| `minor_classes.py`   | Adjacent functions and support classes                                                                          |
+| `minor_classes.py`    | Adjacent functions and support classes                                                                          |
 | `utils.py`            | Task-related algorithms                                                                                         |
 | `run.py`              | Starting point of the program with its main function - can be edited for flags and function argument extensions |
 | `config.txt`          | Changeable variables for the program - should be edited                                                         |
@@ -1101,7 +1132,7 @@ classify our images based on the zero-shot evaluations.
 As the following experiments showed, the averaging strategy is not the best. Moreover, the smallest model
 ViT-B/16 showed the best results after separately fine-tuning model on some category 🪧 sets.
 
-![description comparison graph](result%2Fstats%2Fmodel_accuracy_plot.png)
+![description comparison graph](result%2Fstats%2Fmodel_accuracy_plot_all.png)
 
 Check out all of the prepared category 🪧 descriptions in the [category_descriptions](category_descriptions) 📁 folder.
 Which supports versions mapping from 1 to 9 for the csv files starting with `page_categories_` prefix. The separate set
@@ -1239,7 +1270,7 @@ revision `v1.9.22` turns to `model_v1922` model folder), and only then run repo 
 - **Developed by** UFAL [^7] 👥
 - **Funded by** ATRIUM [^4]  💰
 - **Shared by** ATRIUM [^4] & UFAL [^7] 🔗
-- **Model type:** fine-tuned ViT with a 224x224 [^2] [^13] [^14] 🔗 or 336x336 [^15] 🔗 resolution size 
+- **Model type:** fine-tuned CLIP-ViT with a 224x224 [^2] [^13] [^14] 🔗 or 336x336 [^15] 🔗 resolution size 
 
 **©️ 2022 UFAL & ATRIUM**
 
