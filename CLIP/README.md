@@ -582,37 +582,46 @@ There are accuracy performance measurements and plots of confusion matrices for 
 dataset (10% of the provided in `[TRAIN]`'s folder data). Both graphic plots and tables with 
 results can be found in the [result](result) 📁 folder.
 
-| version      | model_name              | accuracy (%) |
-|:-------------|:------------------------|-------------:|
-| v1.1.3.1     | ViT-B/16 init           |         99.1 |
-| v1.1.3.2     | ViT-B/16 details        |        99.08 |
-| **v1.1.3.3** | **ViT-B/16 extra**      |    **99.12** |
-| v1.1.3.4     | ViT-B/16 gemini         |         99.1 |
-| v1.1.3.5     | ViT-B/16 gpt            |        98.95 |
-| v1.1.3.6     | ViT-B/16 large          |         99.1 |
-| **v1.1.3.7** | **ViT-B/16 mid**        |    **99.14** |
-| v1.1.3.8     | ViT-B/16 min            |        98.86 |
-| v1.1.3.9     | ViT-B/16 short          |        99.06 |
-| v1.1.3       | ViT-B/16 average        |        99.06 |
-| v1.2.3.1     | ViT-B/32 init           |        98.95 |
-| v1.2.3.3     | ViT-B/32 extra          |        98.92 |
-| v1.2.3.4     | ViT-B/32 gemini         |        98.94 |
-| v1.2.3.6     | ViT-B/32 large          |        98.97 |
-| v1.2.3.7     | ViT-B/32 mid            |        98.86 |
-| **v1.2.3**   | **ViT-B/32 average**    |    **98.99** |
-| **v2.2.3.1** | **ViT-L/14-336px init** |    **98.86** |
-| v2.2.3.3     | ViT-L/14-336px extra    |        98.59 |
-| v2.2.3.4     | ViT-L/14-336px gemini   |        98.97 |
-| v2.2.3.6     | ViT-L/14-336px large    |        98.68 |
-| v2.2.3.7     | ViT-L/14-336px mid      |        98.81 |
-| v2.2.3       | ViT-L/14-336px average  |        98.72 |
-| v2.1.3.1     | ViT-L/14 init           |        98.97 |
-| v2.1.3.3     | ViT-L/14 extra          |        98.83 |
-| **v2.1.3.4** | **ViT-L/14 gemini**     |    **98.86** |
-| v2.1.3.6     | ViT-L/14 large          |        98.92 |
-| v2.1.3.7     | ViT-L/14 mid            |         98.9 |
-| v2.1.3       | ViT-L/14 average        |        98.81 |
+| Version      | Base Model + category set | Accuracy (%) | Comment       |
+|:-------------|:--------------------------|-------------:|---------------|
+| **v1.1.3.1** | **ViT-B/16 init**         |     **99.1** | Very good     |
+| v1.1.3.2     | ViT-B/16 details          |        99.08 |               |
+| **v1.1.3.3** | **ViT-B/16 extra**        |    **99.12** | 2nd Best      |
+| **v1.1.3.4** | **ViT-B/16 gemini**       |     **99.1** | Very good     |
+| v1.1.3.5     | ViT-B/16 gpt              |        98.95 |               |
+| **v1.1.3.6** | **ViT-B/16 large**        |     **99.1** | Very good     |
+| **v1.1.3.7** | **ViT-B/16 mid**          |    **99.14** | Best          |
+| v1.1.3.8     | ViT-B/16 min              |        98.86 |               |
+| v1.1.3.9     | ViT-B/16 short            |        99.06 |               |
+| v1.1.3       | ViT-B/16 average          |        99.06 |               |
+| v1.2.3.1     | ViT-B/32 init             |        98.95 |               |
+| v1.2.3.3     | ViT-B/32 extra            |        98.92 |               |
+| v1.2.3.4     | ViT-B/32 gemini           |        98.94 |               |
+| v1.2.3.6     | ViT-B/32 large            |        98.97 |               |
+| v1.2.3.7     | ViT-B/32 mid              |        98.86 |               |
+| **v1.2.3**   | **ViT-B/32 average**      |    **98.99** | Larger & good |
+| **v2.2.3.1** | **ViT-L/14-336px init**   |    **98.86** | Large & OK    |
+| v2.2.3.3     | ViT-L/14-336px extra      |        98.59 |               |
+| v2.2.3.4     | ViT-L/14-336px gemini     |        98.97 |               |
+| v2.2.3.6     | ViT-L/14-336px large      |        98.68 |               |
+| v2.2.3.7     | ViT-L/14-336px mid        |        98.81 |               |
+| v2.2.3       | ViT-L/14-336px average    |        98.72 |               |
+| v2.1.3.1     | ViT-L/14 init             |        98.97 |               |
+| v2.1.3.3     | ViT-L/14 extra            |        98.83 |               |
+| **v2.1.3.4** | **ViT-L/14 gemini**       |    **98.86** | Large & OK    |
+| v2.1.3.6     | ViT-L/14 large            |        98.92 |               |
+| v2.1.3.7     | ViT-L/14 mid              |         98.9 |               |
+| v2.1.3       | ViT-L/14 average          |        98.81 |               |
 
+
+`v1.1.3.1` Evaluation set's accuracy (**Top-1**):  **99.1%** 🏆
+
+<details>
+
+<summary>Confusion matrix 📊 TOP-1 👀</summary>
+
+![TOP-1 confusion matrix](result%2Fplots%2F20251022-0335_5449_EVAL_TOP-1_ViT-B16_v1131.png)
+</details>
 
 `v1.1.3.3` Evaluation set's accuracy (**Top-1**):  **99.12%** 🏆
 
@@ -621,6 +630,24 @@ results can be found in the [result](result) 📁 folder.
 <summary>Confusion matrix 📊 TOP-1 👀</summary>
 
 ![TOP-1 confusion matrix](result%2Fplots%2F20251022-1435_5449_EVAL_TOP-1_ViT-B16_v1133.png)
+</details>
+
+`v1.1.3.4` Evaluation set's accuracy (**Top-1**):  **99.1%** 🏆
+
+<details>
+
+<summary>Confusion matrix 📊 TOP-1 👀</summary>
+
+![TOP-1 confusion matrix](result%2Fplots%2F20251022-0411_5449_EVAL_TOP-1_ViT-B16_v1134.png)
+</details>
+
+`v1.1.3.6` Evaluation set's accuracy (**Top-1**):  **99.1%** 🏆
+
+<details>
+
+<summary>Confusion matrix 📊 TOP-1 👀</summary>
+
+![TOP-1 confusion matrix](result%2Fplots%2F20251022-0435_5449_EVAL_TOP-1_ViT-B16_v1136.png)
 </details>
 
 `v1.1.3.7` Evaluation set's accuracy (**Top-1**):  **99.14%** 🏆
@@ -683,6 +710,13 @@ Additionally, results of prediction inference run on the directory level without
 
 <summary>General result tables 👀</summary>
 
+
+Demo files  `v1.1.3.1`:
+
+- Manually ✍️ **checked** evaluation dataset (TOP-1): [model_TOP-1_EVAL.csv](result%2Ftables%2F20251022-0335_5449_EVAL_TOP-1_ViT-B16_v1131.csv) 📎
+
+- Manually ✍️ **checked** evaluation dataset (TOP-3): [model_TOP-53EVAL.csv](result%2Ftables%2F20251022-0059_5449_EVAL_TOP-3_ViT-B16_v1131.csv) 📎
+
 Demo files  `v1.1.3.3`:
 
 - Manually ✍️ **checked** evaluation dataset (TOP-1): [model_TOP-1_EVAL.csv](result%2Ftables%2F20251022-1435_5449_EVAL_TOP-1_ViT-B16_v1133.csv) 📎
@@ -690,6 +724,18 @@ Demo files  `v1.1.3.3`:
 - Manually ✍️ **checked** evaluation dataset (TOP-3): [model_TOP-53EVAL.csv](result%2Ftables%2F20251022-1436_5449_EVAL_TOP-3_ViT-B16_v1133.csv) 📎
 
 - **Unchecked with TRUE** values (small): [model_TOP-1.csv](result%2Ftables%2F20251022-1223_114_result_ViT-B16_v1.1.3.3_TOP-1.csv)📎
+
+Demo files  `v1.1.3.4`:
+
+- Manually ✍️ **checked** evaluation dataset (TOP-1): [model_TOP-1_EVAL.csv](result%2Ftables%2F20251022-0411_5449_EVAL_TOP-1_ViT-B16_v1134.csv) 📎
+
+- Manually ✍️ **checked** evaluation dataset (TOP-3): [model_TOP-53EVAL.csv](result%2Ftables%2F20251022-0140_5449_EVAL_TOP-3_ViT-B16_v1134.csv) 📎
+
+Demo files  `v1.1.3.6`:
+
+- Manually ✍️ **checked** evaluation dataset (TOP-1): [model_TOP-1_EVAL.csv](result%2Ftables%2F20251022-0435_5449_EVAL_TOP-1_ViT-B16_v1136.csv) 📎
+
+- Manually ✍️ **checked** evaluation dataset (TOP-3): [model_TOP-53EVAL.csv](result%2Ftables%2F20251022-0207_5449_EVAL_TOP-3_ViT-B16_v1136.csv) 📎
 
 Demo files  `v1.1.3.7`:
 
