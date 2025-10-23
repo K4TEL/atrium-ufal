@@ -823,6 +823,8 @@ since the rows will be basically sorted by categories, and most ambiguous ones w
 have more small probabilities instead of zeros than the most obvious (for the model) 
 categories 🪧.
 
+Plus the small  **Unchecked with TRUE** values combination of the best 5 models: [models_TOP-1.csv](result%2Ftables%2F20251023-1412_BEST_5_models_TOP-1.csv)📎
+
 ----
 
 ## Data preparation 📦
