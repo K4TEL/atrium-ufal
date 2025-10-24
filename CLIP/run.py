@@ -254,15 +254,15 @@ if __name__ == "__main__":
         # ----------------------------------------------
         #print(f"Deleting branch {config.get('HF', 'revision')}")
         #delete_branch(config.get("HF", "repo_name"), repo_type="model", branch=config.get("HF", "revision"), token=config.get("HF", "token"))
-        print(f"Creating fresh branch {config.get('HF', 'revision')}")
-        create_branch(config.get("HF", "repo_name"), repo_type="model", branch=config.get("HF", "revision"),
-                     exist_ok=True,
-                     token=config.get("HF", "token"))
-        print(f"Loading local model from {model_path} for pushing to the HuggingFace hub {config.get('HF', 'repo_name')}")
-        clip_instance.load_model(str(model_path), local_revision)
-        print(f"Pushing model to the HuggingFace hub branch {config.get('HF', 'revision')}")
-        clip_instance.pushing_to_hub(config.get("HF", "repo_name"), False, config.get("HF", "token"),
-                                    config.get("HF", "revision"))
+        # print(f"Creating fresh branch {config.get('HF', 'revision')}")
+        # create_branch(config.get("HF", "repo_name"), repo_type="model", branch=config.get("HF", "revision"),
+        #              exist_ok=True,
+        #              token=config.get("HF", "token"))
+        # print(f"Loading local model from {model_path} for pushing to the HuggingFace hub {config.get('HF', 'repo_name')}")
+        # clip_instance.load_model(str(model_path), local_revision)
+        # print(f"Pushing model to the HuggingFace hub branch {config.get('HF', 'revision')}")
+        # clip_instance.pushing_to_hub(config.get("HF", "repo_name"), False, config.get("HF", "token"),
+        #                             config.get("HF", "revision"))
         # ----------------------------------------------
 
 
